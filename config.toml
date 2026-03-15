@@ -1,0 +1,3 @@
+[config]
+file = "asmfiles/assembly01.asm"
+memory = "10MB"
