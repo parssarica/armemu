@@ -14,14 +14,14 @@ pub struct Config {
 
 pub enum ErrorType {
     FileNotFound,
-    Other(Box<dyn std::error::Error>),
+    Other(()),
 }
 
 pub fn parse_file() -> Result<Config, ErrorType> {
     let content = fs::read("config.toml").map_err(|_| ErrorType::FileNotFound)?;
     let config: ConfigToml =
-        toml::from_str(std::str::from_utf8(&content).map_err(|e| ErrorType::Other(Box::new(e)))?)
-            .map_err(|e| ErrorType::Other(Box::new(e)))?;
+        toml::from_str(std::str::from_utf8(&content).map_err(|_| ErrorType::Other(()))?)
+            .map_err(|_| ErrorType::Other(()))?;
 
     Ok(config.config)
 }
