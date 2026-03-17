@@ -1,4 +1,5 @@
 pub mod errormsg;
+pub mod instruction_parser;
 mod parse_toml;
 pub mod registers;
 mod tests;
