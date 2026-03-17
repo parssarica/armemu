@@ -27,7 +27,7 @@ mod tests {
         let registers = create_registers();
         let mut i = 0;
 
-        assert_eq!(registers.len(), 64, "Not enough registers was created.");
+        assert_eq!(registers.len(), 66, "Not enough registers was created.");
         for _ in &registers {
             if i < 31 {
                 assert_eq!(
@@ -43,11 +43,15 @@ mod tests {
                 );
             } else if i == 62 {
                 assert_eq!(registers[i].name, "SP", "Register name didn't match.");
-            } else {
+            } else if i == 63 {
                 assert_eq!(registers[i].name, "PC", "Register name didn't match.");
+            } else if i == 64 {
+                assert_eq!(registers[i].name, "XZR", "Register name didn't match.");
+            } else {
+                assert_eq!(registers[i].name, "WZR", "Register name didn't match.");
             }
 
-            if i > 30 && i < 62 {
+            if (i > 30 && i < 62) || (i == 65) {
                 assert_eq!(registers[i].value, RegisterValue::Val32(0));
                 assert_eq!(registers[i].bit_count, 32);
             } else {

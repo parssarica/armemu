@@ -41,6 +41,8 @@ pub fn create_registers() -> Vec<Register> {
 
     registers.push(Register::new("SP", 64));
     registers.push(Register::new("PC", 64));
+    registers.push(Register::new("XZR", 64));
+    registers.push(Register::new("WZR", 32));
 
     registers
 }
@@ -60,7 +62,7 @@ pub fn get_register<'a>(registers: &'a Vec<Register>, name: &'a str) -> Option<&
 }
 
 pub fn set_register_value(registers: &mut Vec<Register>, name: &str, value: RegisterValue) {
-    if name.len() < 2 {
+    if name.len() < 2 || name == "XZR" || name == "WZR" {
         return;
     }
 
