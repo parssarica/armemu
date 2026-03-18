@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::instruction_parser::*;
+    use crate::parse_toml::*;
     use crate::registers::*;
 
     #[test]
@@ -300,5 +301,24 @@ mod tests {
             matches!(ins.barrelshifter.clone(), None),
             "Instruction 7 barrel shifter found."
         );
+    }
+
+    #[test]
+    fn parse_memory_test() {
+        let size1 = parse_memory("100 GB");
+        let size2 = parse_memory("100GB");
+        let size3 = parse_memory("100 MB");
+        let size4 = parse_memory("100MB");
+        let size5 = parse_memory("100 KB");
+        let size6 = parse_memory("100KB");
+        let size7 = parse_memory("100");
+
+        assert_eq!(size1, 107374182400, "Size 1 was wrong.");
+        assert_eq!(size2, 107374182400, "Size 2 was wrong.");
+        assert_eq!(size3, 104857600, "Size 3 was wrong.");
+        assert_eq!(size4, 104857600, "Size 4 was wrong.");
+        assert_eq!(size5, 102400, "Size 5 was wrong.");
+        assert_eq!(size6, 102400, "Size 6 was wrong.");
+        assert_eq!(size7, 100, "Size 7 was wrong.");
     }
 }

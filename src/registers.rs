@@ -4,6 +4,7 @@ pub enum RegisterValue {
     Val64(u64),
 }
 
+#[derive(Clone)]
 pub struct Register {
     pub name: String,
     pub value: RegisterValue,

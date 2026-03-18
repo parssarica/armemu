@@ -25,3 +25,34 @@ pub fn parse_file() -> Result<Config, ErrorType> {
 
     Ok(config.config)
 }
+
+pub fn parse_memory(mem_indicator: &str) -> usize {
+    let x = mem_indicator.replace(" ", "");
+
+    if x.len() < 1 {
+        return 0;
+    }
+
+    let mut multiplier = 1;
+
+    if x.len() > 2 {
+        multiplier = match &*(x[(x.len() - 2)..].to_uppercase()) {
+            "TB" => 1099511627776,
+            "GB" => 1073741824,
+            "MB" => 1048576,
+            "KB" => 1024,
+            _ => 1,
+        }
+    }
+
+    let mut last_index = x.len();
+    if multiplier != 1 {
+        last_index -= 2;
+    }
+
+    let Ok(num_part) = &x[..last_index].parse::<usize>() else {
+        return 0;
+    };
+
+    num_part * multiplier
+}

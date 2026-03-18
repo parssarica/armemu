@@ -126,3 +126,15 @@ pub fn parse_instruction<'a>(
         barrelshifter: barrelshifter,
     })
 }
+
+pub fn parse_file<'a>(registers: &'a Vec<Register>, file: &'a str) -> Option<Vec<Instruction<'a>>> {
+    let mut ins: Instruction;
+    let mut code = Vec::new();
+
+    for line in file.lines() {
+        ins = parse_instruction(line, registers)?;
+        code.push(ins);
+    }
+
+    Some(code)
+}
