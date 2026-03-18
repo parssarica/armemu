@@ -1,5 +1,6 @@
 pub mod errormsg;
 pub mod instruction_parser;
+pub mod instructions;
 mod parse_toml;
 pub mod registers;
 mod tests;
@@ -7,12 +8,6 @@ mod tests;
 use errormsg::*;
 use std::fs;
 use std::process::exit;
-
-pub struct ConfigAsm<'a> {
-    memory: Vec<u8>,
-    code: Vec<instruction_parser::Instruction<'a>>,
-    registers: &'a Vec<registers::Register>,
-}
 
 fn main() {
     let config = match parse_toml::parse_file() {
@@ -26,7 +21,6 @@ fn main() {
         }
     };
 
-    let configasm: ConfigAsm;
     let memory = vec![0; parse_toml::parse_memory(&config.memory)];
     let registers = registers::create_registers();
 
@@ -43,12 +37,6 @@ fn main() {
     let Some(code) = instruction_parser::parse_file(&registers, &file) else {
         fail_normal(&format!("Input file '{}' is invalid.", config.file));
         exit(1);
-    };
-
-    configasm = ConfigAsm {
-        memory: memory,
-        code: code,
-        registers: &registers,
     };
 
     println!("Parsed: {:#?}", config);

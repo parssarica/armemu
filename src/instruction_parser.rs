@@ -15,24 +15,22 @@ pub struct BarrelShifter {
     pub value: Option<RegisterValue>,
 }
 
-pub enum Operand<'a> {
-    OperandRegister(&'a Register),
+pub enum Operand {
+    OperandRegister(String),
     OperandNumber(RegisterValue),
 }
 
-pub struct Instruction<'a> {
+pub struct Instruction {
     pub name: String,
-    pub op1: Option<Operand<'a>>,
-    pub op2: Option<Operand<'a>>,
-    pub op3: Option<Operand<'a>>,
-    pub op4: Option<Operand<'a>>,
+    pub op1: Option<Operand>,
+    pub op2: Option<Operand>,
+    pub op3: Option<Operand>,
+    pub op4: Option<Operand>,
     pub barrelshifter: Option<BarrelShifter>,
+    pub operand_count: u8,
 }
 
-pub fn parse_instruction<'a>(
-    line: &'a str,
-    registers: &'a Vec<Register>,
-) -> Option<Instruction<'a>> {
+pub fn parse_instruction(line: &str, registers: &Vec<Register>) -> Option<Instruction> {
     let mut i = 0;
     let mut trimmed_parts: Vec<&str>;
     let mut operand: Option<Operand>;
@@ -42,6 +40,7 @@ pub fn parse_instruction<'a>(
     let mut op3: Option<Operand> = None;
     let mut op4: Option<Operand> = None;
     let mut barrelshifter: Option<BarrelShifter> = None;
+    let mut operand_count = 0;
     let instruction_name: Option<String>;
 
     if let Some((beginning, rest)) = line.split_once(' ') {
@@ -71,7 +70,7 @@ pub fn parse_instruction<'a>(
             return None;
         } else if trimmed_parts.len() == 1 {
             operand = match get_register(registers, trimmed_parts[0]) {
-                Some(n) => Some(Operand::OperandRegister(n)),
+                Some(n) => Some(Operand::OperandRegister(n.name.clone())),
                 None => match trimmed_parts[0]
                     .trim_matches(|c: char| c == '#')
                     .parse::<u64>()
@@ -87,6 +86,8 @@ pub fn parse_instruction<'a>(
                 3 => op4 = operand,
                 _ => return None,
             }
+
+            operand_count += 1;
         } else if trimmed_parts.len() == 2 {
             barrelshifter = Some(BarrelShifter {
                 barrelshiftertype: match trimmed_parts[0] {
@@ -124,10 +125,11 @@ pub fn parse_instruction<'a>(
         op3: op3,
         op4: op4,
         barrelshifter: barrelshifter,
+        operand_count: operand_count,
     })
 }
 
-pub fn parse_file<'a>(registers: &'a Vec<Register>, file: &'a str) -> Option<Vec<Instruction<'a>>> {
+pub fn parse_file(registers: &Vec<Register>, file: &str) -> Option<Vec<Instruction>> {
     let mut ins: Instruction;
     let mut code = Vec::new();
 

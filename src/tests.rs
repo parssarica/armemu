@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::instruction_parser::*;
+    use crate::instructions::*;
     use crate::parse_toml::*;
     use crate::registers::*;
 
@@ -320,5 +321,29 @@ mod tests {
         assert_eq!(size5, 102400, "Size 5 was wrong.");
         assert_eq!(size6, 102400, "Size 6 was wrong.");
         assert_eq!(size7, 100, "Size 7 was wrong.");
+    }
+
+    #[test]
+    fn mov_test() {
+        let mut registers = create_registers();
+        let ins = Instruction {
+            name: String::from("MOV"),
+            op1: Some(Operand::OperandRegister(String::from("X0"))),
+            op2: Some(Operand::OperandNumber(RegisterValue::Val64(314))),
+            op3: None,
+            op4: None,
+            barrelshifter: None,
+            operand_count: 2,
+        };
+
+        let mut res1 = Ok(());
+        mov(&mut registers, &ins, &mut res1);
+
+        assert!(res1.is_ok(), "Instruction failed for no reason.");
+        assert_eq!(
+            get_register(&registers, "X0").unwrap().value,
+            RegisterValue::Val64(314),
+            "Value was not moved by instruction."
+        );
     }
 }
