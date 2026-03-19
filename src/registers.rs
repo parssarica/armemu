@@ -1,7 +1,51 @@
+use std::ops::Add;
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum RegisterValue {
     Val32(u32),
     Val64(u64),
+}
+
+impl Add for RegisterValue {
+    type Output = RegisterValue;
+
+    fn add(self, other: RegisterValue) -> RegisterValue {
+        let val1 = match self {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        let val2 = match other {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        RegisterValue::Val64(val1 + val2)
+    }
+}
+
+impl RegisterValue {
+    pub fn convert_32(&self) -> u32 {
+        match self {
+            Self::Val32(n) => *n,
+            Self::Val64(n) => *n as u32,
+        }
+    }
+
+    pub fn convert_64(&self) -> u64 {
+        match self {
+            Self::Val32(n) => *n as u64,
+            Self::Val64(n) => *n,
+        }
+    }
+
+    pub fn convert_reg(self, reg_name: &str) -> RegisterValue {
+        if reg_name.chars().nth(0).unwrap() == 'W' {
+            return RegisterValue::Val32(self.convert_32());
+        }
+
+        RegisterValue::Val64(self.convert_64())
+    }
 }
 
 #[derive(Clone)]

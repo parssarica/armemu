@@ -30,6 +30,22 @@ pub struct Instruction {
     pub operand_count: u8,
 }
 
+impl Operand {
+    pub fn get_reg_value(&self) -> Option<&str> {
+        match self {
+            Self::OperandRegister(n) => Some(&n),
+            Self::OperandNumber(_) => None,
+        }
+    }
+
+    pub fn get_num_value(&self) -> Option<RegisterValue> {
+        match self {
+            Self::OperandNumber(n) => Some(*n),
+            Self::OperandRegister(_) => None,
+        }
+    }
+}
+
 pub fn parse_instruction(line: &str, registers: &Vec<Register>) -> Option<Instruction> {
     let mut i = 0;
     let mut trimmed_parts: Vec<&str>;
