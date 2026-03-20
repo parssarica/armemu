@@ -425,4 +425,30 @@ mod tests {
             "Value was not added by instruction."
         );
     }
+
+    #[test]
+    fn and_test() {
+        let mut registers = create_registers();
+        let ins = Instruction {
+            name: String::from("SUB"),
+            op1: Some(Operand::OperandRegister(String::from("X0"))),
+            op2: Some(Operand::OperandRegister(String::from("X1"))),
+            op3: Some(Operand::OperandNumber(RegisterValue::Val64(12))),
+            op4: None,
+            barrelshifter: None,
+            operand_count: 3,
+        };
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(24));
+
+        let mut res1 = Ok(());
+        and(&mut registers, &ins, &mut res1);
+
+        assert!(res1.is_ok(), "Instruction failed for no reason.");
+        assert_eq!(
+            get_register(&registers, "X0").unwrap().value,
+            RegisterValue::Val64(8),
+            "Value was not added by instruction."
+        );
+    }
 }
