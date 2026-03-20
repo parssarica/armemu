@@ -174,3 +174,49 @@ pub fn add(
 
     *output = Ok(());
 }
+
+pub fn sub(
+    registers: &mut Vec<Register>,
+    instruction: &Instruction,
+    output: &mut Result<(), String>,
+) {
+    match operand_check(
+        instruction,
+        Some(OperandType::Register),
+        Some(OperandType::Register),
+        Some(OperandType::Both),
+        None,
+    ) {
+        Err(n) => {
+            *output = Err(n);
+            return;
+        }
+        Ok(_) => (),
+    }
+
+    let register_name = &(get_register(
+        registers,
+        instruction.op1.as_ref().unwrap().get_reg_value().unwrap(),
+    )
+    .unwrap()
+    .name
+    .clone());
+
+    set_register_value(
+        registers,
+        &register_name,
+        (get_register(
+            registers,
+            instruction.op2.as_ref().unwrap().get_reg_value().unwrap(),
+        )
+        .unwrap()
+        .value
+            - match instruction.op3.as_ref().unwrap() {
+                Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
+                Operand::OperandNumber(n) => *n,
+            })
+        .convert_reg(&register_name),
+    );
+
+    *output = Ok(());
+}

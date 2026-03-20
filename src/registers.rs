@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Sub};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum RegisterValue {
@@ -21,6 +21,24 @@ impl Add for RegisterValue {
         };
 
         RegisterValue::Val64(val1 + val2)
+    }
+}
+
+impl Sub for RegisterValue {
+    type Output = RegisterValue;
+
+    fn sub(self, other: RegisterValue) -> RegisterValue {
+        let val1 = match self {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        let val2 = match other {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        RegisterValue::Val64(val1 - val2)
     }
 }
 
