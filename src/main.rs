@@ -1,4 +1,5 @@
 pub mod errormsg;
+mod executer;
 pub mod instruction_parser;
 pub mod instructions;
 mod parse_toml;
@@ -21,8 +22,8 @@ fn main() {
         }
     };
 
-    let memory = vec![0; parse_toml::parse_memory(&config.memory)];
-    let registers = registers::create_registers();
+    let mut memory = vec![0; parse_toml::parse_memory(&config.memory)];
+    let mut registers = registers::create_registers();
 
     let Ok(file_utf8) = fs::read(&config.file) else {
         fail_normal(&format!("Input file '{}' is invalid.", config.file));
@@ -39,5 +40,5 @@ fn main() {
         exit(1);
     };
 
-    println!("Parsed: {:#?}", config);
+    executer::execute(&code, &mut registers, &mut memory);
 }

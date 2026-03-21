@@ -1,1 +1,6 @@
-mov X0, #10
+MOV X0, #10
+MOV X1, #5
+ADD X2, X0, X1
+SUB X3, X0, X1
+MUL X4, X2, X3
+AND X5, X4, #255
