@@ -142,6 +142,7 @@ pub fn create_registers() -> Vec<Register> {
     registers.push(Register::new("PC", 64));
     registers.push(Register::new("XZR", 64));
     registers.push(Register::new("WZR", 32));
+    registers.push(Register::new("NZCV", 64));
 
     registers
 }
@@ -154,6 +155,20 @@ pub fn get_register<'a>(registers: &'a Vec<Register>, name: &'a str) -> Option<&
     for i in registers {
         if i.name == name {
             return Some(i);
+        }
+    }
+
+    None
+}
+
+pub fn get_register_value(registers: &Vec<Register>, name: &str) -> Option<RegisterValue> {
+    if name.len() < 2 {
+        return None;
+    }
+
+    for i in registers {
+        if i.name == name {
+            return Some(i.value);
         }
     }
 
@@ -187,5 +202,48 @@ pub fn set_register_value(registers: &mut Vec<Register>, name: &str, value: Regi
                 RegisterValue::Val64(n) => RegisterValue::Val32(n as u32),
             };
         }
+    }
+}
+
+pub fn set_flag(registers: &mut Vec<Register>, flag: &str, newval: bool) {
+    let bit: u64 = match flag {
+        "N" => 31,
+        "Z" => 30,
+        "C" => 29,
+        "V" => 28,
+        _ => return,
+    };
+
+    set_register_value(
+        registers,
+        "NZCV",
+        match get_register_value(registers, "NZCV").unwrap() {
+            RegisterValue::Val64(n) => RegisterValue::Val64(match newval {
+                true => n | (1u64 << bit),
+                false => n & !(1u64 << bit),
+            }),
+            _ => unreachable!(),
+        },
+    );
+}
+
+pub fn get_flag(registers: &Vec<Register>, flag: &str) -> bool {
+    let bit = match flag {
+        "N" => 31,
+        "Z" => 30,
+        "C" => 29,
+        "V" => 28,
+        _ => return false,
+    };
+
+    let value = match get_register_value(registers, "NZCV").unwrap() {
+        RegisterValue::Val64(n) => n,
+        _ => unreachable!(),
+    };
+
+    match (value >> bit) & 1 {
+        1 => true,
+        0 => false,
+        _ => unreachable!(),
     }
 }

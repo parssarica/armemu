@@ -28,7 +28,7 @@ mod tests {
         let registers = create_registers();
         let mut i = 0;
 
-        assert_eq!(registers.len(), 66, "Not enough registers was created.");
+        assert_eq!(registers.len(), 67, "Not enough registers was created.");
         for _ in &registers {
             if i < 31 {
                 assert_eq!(
@@ -48,8 +48,10 @@ mod tests {
                 assert_eq!(registers[i].name, "PC", "Register name didn't match.");
             } else if i == 64 {
                 assert_eq!(registers[i].name, "XZR", "Register name didn't match.");
-            } else {
+            } else if i == 65 {
                 assert_eq!(registers[i].name, "WZR", "Register name didn't match.");
+            } else if i == 66 {
+                assert_eq!(registers[i].name, "NZCV", "Register name didn't match.");
             }
 
             if (i > 30 && i < 62) || (i == 65) {
@@ -449,6 +451,135 @@ mod tests {
             get_register(&registers, "X0").unwrap().value,
             RegisterValue::Val64(8),
             "Value was not added by instruction."
+        );
+    }
+
+    #[test]
+    fn set_flag_test() {
+        let mut registers = create_registers();
+
+        set_flag(&mut registers, "N", true);
+        assert_eq!(
+            get_register(&registers, "NZCV").unwrap().value,
+            RegisterValue::Val64(2147483648),
+            "N flag was not set."
+        );
+        set_flag(&mut registers, "Z", true);
+        assert_eq!(
+            get_register(&registers, "NZCV").unwrap().value,
+            RegisterValue::Val64(3221225472),
+            "Z flag was not set."
+        );
+        set_flag(&mut registers, "C", true);
+        assert_eq!(
+            get_register(&registers, "NZCV").unwrap().value,
+            RegisterValue::Val64(3758096384),
+            "C flag was not set."
+        );
+        set_flag(&mut registers, "V", true);
+        assert_eq!(
+            get_register(&registers, "NZCV").unwrap().value,
+            RegisterValue::Val64(4026531840),
+            "V flag was not set."
+        );
+        set_flag(&mut registers, "N", false);
+        assert_eq!(
+            get_register(&registers, "NZCV").unwrap().value,
+            RegisterValue::Val64(1879048192),
+            "N flag was not cleared."
+        );
+        set_flag(&mut registers, "Z", false);
+        assert_eq!(
+            get_register(&registers, "NZCV").unwrap().value,
+            RegisterValue::Val64(805306368),
+            "Z flag was not cleared."
+        );
+        set_flag(&mut registers, "C", false);
+        assert_eq!(
+            get_register(&registers, "NZCV").unwrap().value,
+            RegisterValue::Val64(268435456),
+            "C flag was not cleared."
+        );
+        set_flag(&mut registers, "V", false);
+        assert_eq!(
+            get_register(&registers, "NZCV").unwrap().value,
+            RegisterValue::Val64(0),
+            "V flag was not cleared."
+        );
+    }
+
+    #[test]
+    fn get_flag_test() {
+        let mut registers = create_registers();
+
+        set_flag(&mut registers, "N", true);
+        assert_eq!(get_flag(&registers, "N"), true, "N flag was not set.");
+        set_flag(&mut registers, "Z", true);
+        assert_eq!(get_flag(&registers, "Z"), true, "Z flag was not set.");
+        set_flag(&mut registers, "C", true);
+        assert_eq!(get_flag(&registers, "C"), true, "C flag was not set.");
+        set_flag(&mut registers, "V", true);
+        assert_eq!(get_flag(&registers, "V"), true, "V flag was not set.");
+        set_flag(&mut registers, "N", false);
+        assert_eq!(get_flag(&registers, "N"), false, "N flag was not cleared.");
+        set_flag(&mut registers, "Z", false);
+        assert_eq!(get_flag(&registers, "Z"), false, "Z flag was not cleared.");
+        set_flag(&mut registers, "C", false);
+        assert_eq!(get_flag(&registers, "C"), false, "C flag was not cleared.");
+        set_flag(&mut registers, "V", false);
+        assert_eq!(get_flag(&registers, "V"), false, "V flag was not cleared.");
+    }
+
+    #[test]
+    fn get_register_value_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(10));
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap(),
+            RegisterValue::Val64(10),
+            "X0's value got wrong."
+        );
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(20));
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap(),
+            RegisterValue::Val64(20),
+            "X0's value got wrong."
+        );
+        set_register_value(&mut registers, "W0", RegisterValue::Val32(10));
+        assert_eq!(
+            get_register_value(&registers, "W0").unwrap(),
+            RegisterValue::Val32(10),
+            "W0's value got wrong."
+        );
+        set_register_value(&mut registers, "W0", RegisterValue::Val32(20));
+        assert_eq!(
+            get_register_value(&registers, "W0").unwrap(),
+            RegisterValue::Val32(20),
+            "W0's value got wrong."
+        );
+        set_register_value(&mut registers, "XZR", RegisterValue::Val64(10));
+        assert_eq!(
+            get_register_value(&registers, "XZR").unwrap(),
+            RegisterValue::Val64(0),
+            "XZR's value got wrong."
+        );
+        set_register_value(&mut registers, "XZR", RegisterValue::Val64(20));
+        assert_eq!(
+            get_register_value(&registers, "XZR").unwrap(),
+            RegisterValue::Val64(0),
+            "XZR's value got wrong."
+        );
+        set_register_value(&mut registers, "WZR", RegisterValue::Val32(10));
+        assert_eq!(
+            get_register_value(&registers, "WZR").unwrap(),
+            RegisterValue::Val32(0),
+            "WZR's value got wrong."
+        );
+        assert_eq!(
+            get_register_value(&registers, "NONEXISTINGREGISTER"),
+            None,
+            "Non existing register was found."
         );
     }
 }
