@@ -181,9 +181,11 @@ pub fn debug_view(
 
         match input.trim() {
             "n" => break,
+            "q" => exit(0),
             "help" => {
                 println!("Commands:");
                 println!("\tn\t\t\tContinues to next instruction");
+                println!("\tq\t\t\tExits the program");
                 println!("\thelp\t\t\tShows this help message");
             }
             _ => fail_normal(&format!("No command named '{}'", input.trim())),
