@@ -139,6 +139,27 @@ pub fn debug_view(
                 add_space(&registers[i + 60].name),
                 registers[i + 60].value
             );
+            if registers[i + 60].name == "NZCV" {
+                print!(
+                    " [ \x1b[{}mN\x1b[0m \x1b[{}mZ\x1b[0m \x1b[{}mC\x1b[0m \x1b[{}mV\x1b[0m ]",
+                    match get_flag(registers, "N") {
+                        true => 92,
+                        false => 91,
+                    },
+                    match get_flag(registers, "Z") {
+                        true => 92,
+                        false => 91,
+                    },
+                    match get_flag(registers, "C") {
+                        true => 92,
+                        false => 91,
+                    },
+                    match get_flag(registers, "V") {
+                        true => 92,
+                        false => 91,
+                    }
+                );
+            }
         }
         println!();
     }
