@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::{Add, BitAnd, Mul, Sub};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -75,6 +76,15 @@ impl BitAnd for RegisterValue {
         };
 
         RegisterValue::Val64(val1 & val2)
+    }
+}
+
+impl fmt::UpperHex for RegisterValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Val32(n) => fmt::UpperHex::fmt(&n, f),
+            Self::Val64(n) => fmt::UpperHex::fmt(&n, f),
+        }
     }
 }
 

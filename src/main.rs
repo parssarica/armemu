@@ -1,3 +1,4 @@
+pub mod dbgview;
 pub mod errormsg;
 mod executer;
 pub mod instruction_parser;
