@@ -15,9 +15,13 @@ fn print_msg(msg: &str) {
         }
     };
     let msg_len = msg.len();
-    let line = "─".repeat(((w as usize) - msg_len - 2) / 2);
+    let line = "─".repeat(((w as usize) - msg_len) / 2);
+    print!("\x1b");
+    if ((w as usize) - msg_len) % 2 != 0 {
+        print!("─");
+    }
 
-    println!("{}", format!("\x1b[93m{}{}{}\x1b[0m", line, msg, line));
+    println!("{}", format!("[93m{}{}{}\x1b[0m", line, msg, line));
 }
 
 fn add_space(reg_name: &str) -> String {
@@ -31,7 +35,7 @@ fn add_space(reg_name: &str) -> String {
 }
 
 pub fn debug_view(
-    registers: &Vec<Register>,
+    registers: &mut Vec<Register>,
     instructions: &Vec<Instruction>,
     last_msg: &str,
 ) -> String {
@@ -50,6 +54,8 @@ pub fn debug_view(
     let mut i = 0;
     let mut input;
     let mut ins_to_print = vec![ins1];
+    let mut trimmed_input;
+    let mut parts: Vec<&str>;
 
     if ins2.is_some() {
         ins_to_print.push(ins2.unwrap());
@@ -179,16 +185,57 @@ pub fn debug_view(
             input = last_msg.to_string();
         }
 
-        match input.trim() {
-            "n" => break,
-            "q" => exit(0),
-            "help" => {
-                println!("Commands:");
-                println!("\tn\t\t\tContinues to next instruction");
-                println!("\tq\t\t\tExits the program");
-                println!("\thelp\t\t\tShows this help message");
+        trimmed_input = input.trim();
+        parts = trimmed_input.split(" ").collect();
+        if trimmed_input == "n" {
+            break;
+        } else if trimmed_input == "q" {
+            exit(0);
+        } else if trimmed_input == "help" {
+            println!("Commands:");
+            println!("\tn\t\t\tContinues to next instruction");
+            println!("\tq\t\t\tExits the program");
+            println!("\tset\t\t\tChanges something depending on the arguments");
+            println!("\thelp\t\t\tShows this help message");
+        } else if trimmed_input.starts_with("set") {
+            if parts.len() == 4 && parts[1] == "reg" {
+                if let Some(_) = get_register_value(registers, parts[2]) {
+                    i = match parts[2].chars().nth(0).unwrap() {
+                        'W' => 0,
+                        _ => 1,
+                    };
+
+                    if i == 1 {
+                        set_register_value(
+                            registers,
+                            parts[2],
+                            RegisterValue::Val64(match parts[3].parse::<u64>() {
+                                Ok(n) => n,
+                                Err(_) => {
+                                    fail_normal("Not valid number");
+                                    continue;
+                                }
+                            }),
+                        );
+                    } else {
+                        set_register_value(
+                            registers,
+                            parts[2],
+                            RegisterValue::Val32(match parts[3].parse::<u32>() {
+                                Ok(n) => n,
+                                Err(_) => {
+                                    fail_normal("Not valid number");
+                                    continue;
+                                }
+                            }),
+                        );
+                    }
+                } else {
+                    fail_normal(&format!("No register found with name '{}'", parts[2]));
+                }
             }
-            _ => fail_normal(&format!("No command named '{}'", input.trim())),
+        } else {
+            fail_normal(&format!("No command named '{}'", input.trim()));
         }
     }
 
