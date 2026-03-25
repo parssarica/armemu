@@ -582,4 +582,65 @@ mod tests {
             "Non existing register was found."
         );
     }
+
+    #[test]
+    fn magic_split_test() {
+        let line1 = "LDR X0, [X1]";
+        let line2 = "LDR X0, [X1, #12]";
+        let line3 = "LDR X0, [X1], #12";
+        let line4 = "LDR X0, [X1, #12, LSL #23]";
+        let line5 = "LDR X0, [X1, LSL #24], #12";
+        let line6 = "";
+        let line7 = "RaNdOmDaTa";
+
+        let output1 = magic_split(line1);
+        let output2 = magic_split(line2);
+        let output3 = magic_split(line3);
+        let output4 = magic_split(line4);
+        let output5 = magic_split(line5);
+        let output6 = magic_split(line6);
+        let output7 = magic_split(line7);
+
+        assert!(output1.is_some(), "Split #1 failed.");
+        assert!(output2.is_some(), "Split #2 failed.");
+        assert!(output3.is_some(), "Split #3 failed.");
+        assert!(output4.is_some(), "Split #4 failed.");
+        assert!(output5.is_some(), "Split #5 failed.");
+        assert!(output6.is_none(), "Split #6 didn't fail.");
+        assert!(output7.is_none(), "Split #7 didn't fail.");
+
+        assert_eq!(
+            output1.unwrap(),
+            vec!["LDR".to_string(), "X0".to_string(), "[X1]".to_string()],
+            "Split #1 worked wrong."
+        );
+        assert_eq!(
+            output2.unwrap(),
+            vec!["LDR".to_string(), "X0".to_string(), "[X1, #12]".to_string()],
+            "Split #2 worked wrong."
+        );
+        assert_eq!(
+            output3.unwrap(),
+            vec!["LDR".to_string(), "X0".to_string(), "[X1], #12".to_string()],
+            "Split #3 worked wrong."
+        );
+        assert_eq!(
+            output4.unwrap(),
+            vec![
+                "LDR".to_string(),
+                "X0".to_string(),
+                "[X1, #12, LSL #23]".to_string()
+            ],
+            "Split #4 worked wrong."
+        );
+        assert_eq!(
+            output5.unwrap(),
+            vec![
+                "LDR".to_string(),
+                "X0".to_string(),
+                "[X1, LSL #24], #12".to_string()
+            ],
+            "Split #5 worked wrong."
+        );
+    }
 }

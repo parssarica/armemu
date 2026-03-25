@@ -4,7 +4,10 @@ use crate::registers::*;
 pub enum OperandType {
     Register,
     Immediate,
-    Both,
+    MemoryAddress,
+    RegImm,
+    RegMem,
+    Triple,
 }
 
 pub fn operand_check(
@@ -42,11 +45,21 @@ pub fn operand_check(
     if operand_count > 0 {
         match instruction.op1.as_ref().unwrap() {
             Operand::OperandRegister(_) => match op1_type.unwrap() {
-                OperandType::Immediate => return Err("Invalid type in operand 1".to_string()),
+                OperandType::Immediate | OperandType::MemoryAddress => {
+                    return Err("Invalid type in operand 1".to_string())
+                }
                 _ => (),
             },
             Operand::OperandNumber(_) => match op1_type.unwrap() {
-                OperandType::Register => return Err("Invalid type in operand 1".to_string()),
+                OperandType::Register | OperandType::MemoryAddress => {
+                    return Err("Invalid type in operand 1".to_string())
+                }
+                _ => (),
+            },
+            Operand::OperandAddress(_) => match op1_type.unwrap() {
+                OperandType::Register | OperandType::Immediate => {
+                    return Err("Invalid type in operand 1".to_string())
+                }
                 _ => (),
             },
         }
@@ -55,11 +68,21 @@ pub fn operand_check(
     if operand_count > 1 {
         match instruction.op2.as_ref().unwrap() {
             Operand::OperandRegister(_) => match op2_type.unwrap() {
-                OperandType::Immediate => return Err("Invalid type in operand 2".to_string()),
+                OperandType::Immediate | OperandType::MemoryAddress => {
+                    return Err("Invalid type in operand 2".to_string())
+                }
                 _ => (),
             },
             Operand::OperandNumber(_) => match op2_type.unwrap() {
-                OperandType::Register => return Err("Invalid type in operand 2".to_string()),
+                OperandType::Register | OperandType::MemoryAddress => {
+                    return Err("Invalid type in operand 2".to_string())
+                }
+                _ => (),
+            },
+            Operand::OperandAddress(_) => match op2_type.unwrap() {
+                OperandType::Register | OperandType::Immediate => {
+                    return Err("Invalid type in operand 2".to_string())
+                }
                 _ => (),
             },
         }
@@ -68,11 +91,21 @@ pub fn operand_check(
     if operand_count > 2 {
         match instruction.op3.as_ref().unwrap() {
             Operand::OperandRegister(_) => match op3_type.unwrap() {
-                OperandType::Immediate => return Err("Invalid type in operand 3".to_string()),
+                OperandType::Immediate | OperandType::MemoryAddress => {
+                    return Err("Invalid type in operand 3".to_string())
+                }
                 _ => (),
             },
             Operand::OperandNumber(_) => match op3_type.unwrap() {
-                OperandType::Register => return Err("Invalid type in operand 3".to_string()),
+                OperandType::Register | OperandType::MemoryAddress => {
+                    return Err("Invalid type in operand 3".to_string())
+                }
+                _ => (),
+            },
+            Operand::OperandAddress(_) => match op3_type.unwrap() {
+                OperandType::Register | OperandType::Immediate => {
+                    return Err("Invalid type in operand 3".to_string())
+                }
                 _ => (),
             },
         }
@@ -81,11 +114,21 @@ pub fn operand_check(
     if operand_count > 3 {
         match instruction.op4.as_ref().unwrap() {
             Operand::OperandRegister(_) => match op4_type.unwrap() {
-                OperandType::Immediate => return Err("Invalid type in operand 4".to_string()),
+                OperandType::Immediate | OperandType::MemoryAddress => {
+                    return Err("Invalid type in operand 4".to_string())
+                }
                 _ => (),
             },
             Operand::OperandNumber(_) => match op4_type.unwrap() {
-                OperandType::Register => return Err("Invalid type in operand 4".to_string()),
+                OperandType::Register | OperandType::MemoryAddress => {
+                    return Err("Invalid type in operand 4".to_string())
+                }
+                _ => (),
+            },
+            Operand::OperandAddress(_) => match op4_type.unwrap() {
+                OperandType::Register | OperandType::Immediate => {
+                    return Err("Invalid type in operand 4".to_string())
+                }
                 _ => (),
             },
         }
@@ -102,7 +145,7 @@ pub fn mov(
     match operand_check(
         instruction,
         Some(OperandType::Register),
-        Some(OperandType::Both),
+        Some(OperandType::RegImm),
         None,
         None,
     ) {
@@ -138,7 +181,7 @@ pub fn add(
         instruction,
         Some(OperandType::Register),
         Some(OperandType::Register),
-        Some(OperandType::Both),
+        Some(OperandType::RegImm),
         None,
     ) {
         Err(n) => {
@@ -168,6 +211,7 @@ pub fn add(
             + match instruction.op3.as_ref().unwrap() {
                 Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
                 Operand::OperandNumber(n) => *n,
+                _ => unreachable!(),
             })
         .convert_reg(&register_name),
     );
@@ -184,7 +228,7 @@ pub fn sub(
         instruction,
         Some(OperandType::Register),
         Some(OperandType::Register),
-        Some(OperandType::Both),
+        Some(OperandType::RegImm),
         None,
     ) {
         Err(n) => {
@@ -214,6 +258,7 @@ pub fn sub(
             - match instruction.op3.as_ref().unwrap() {
                 Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
                 Operand::OperandNumber(n) => *n,
+                _ => unreachable!(),
             })
         .convert_reg(&register_name),
     );
@@ -230,7 +275,7 @@ pub fn mul(
         instruction,
         Some(OperandType::Register),
         Some(OperandType::Register),
-        Some(OperandType::Register),
+        Some(OperandType::RegImm),
         None,
     ) {
         Err(n) => {
@@ -260,6 +305,7 @@ pub fn mul(
             * match instruction.op3.as_ref().unwrap() {
                 Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
                 Operand::OperandNumber(n) => *n,
+                _ => unreachable!(),
             })
         .convert_reg(&register_name),
     );
@@ -276,7 +322,7 @@ pub fn and(
         instruction,
         Some(OperandType::Register),
         Some(OperandType::Register),
-        Some(OperandType::Both),
+        Some(OperandType::RegImm),
         None,
     ) {
         Err(n) => {
@@ -306,6 +352,7 @@ pub fn and(
             & match instruction.op3.as_ref().unwrap() {
                 Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
                 Operand::OperandNumber(n) => *n,
+                _ => unreachable!(),
             })
         .convert_reg(&register_name),
     );

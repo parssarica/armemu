@@ -68,46 +68,22 @@ pub fn debug_view(
     for ins in &ins_to_print {
         print!("{:#X}: \x1b[31m{}\x1b[0m", pc + i, ins.name);
         match &ins.op1 {
-            Some(n) => match n {
-                Operand::OperandRegister(s) => print!(" {}", s),
-                Operand::OperandNumber(s) => match s {
-                    RegisterValue::Val64(v) => print!(" {}", v),
-                    RegisterValue::Val32(v) => print!(" {}", v),
-                },
-            },
+            Some(n) => print!(" {}", n),
             None => (),
         }
 
         match &ins.op2 {
-            Some(n) => match n {
-                Operand::OperandRegister(s) => print!(", {}", s),
-                Operand::OperandNumber(s) => match s {
-                    RegisterValue::Val64(v) => print!(", {}", v),
-                    RegisterValue::Val32(v) => print!(", {}", v),
-                },
-            },
+            Some(n) => print!(", {}", n),
             None => (),
         }
 
         match &ins.op3 {
-            Some(n) => match n {
-                Operand::OperandRegister(s) => print!(", {}", s),
-                Operand::OperandNumber(s) => match s {
-                    RegisterValue::Val64(v) => print!(", {}", v),
-                    RegisterValue::Val32(v) => print!(", {}", v),
-                },
-            },
+            Some(n) => print!(", {}", n),
             None => (),
         }
 
         match &ins.op4 {
-            Some(n) => match n {
-                Operand::OperandRegister(s) => print!(", {}", s),
-                Operand::OperandNumber(s) => match s {
-                    RegisterValue::Val64(v) => print!(", {}", v),
-                    RegisterValue::Val32(v) => print!(", {}", v),
-                },
-            },
+            Some(n) => print!(", {}", n),
             None => (),
         }
 

@@ -88,6 +88,15 @@ impl fmt::UpperHex for RegisterValue {
     }
 }
 
+impl fmt::Display for RegisterValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Val32(n) => write!(f, "{}", n),
+            Self::Val64(n) => write!(f, "{}", n),
+        }
+    }
+}
+
 impl RegisterValue {
     pub fn convert_32(&self) -> u32 {
         match self {
