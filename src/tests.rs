@@ -643,4 +643,29 @@ mod tests {
             "Split #5 worked wrong."
         );
     }
+
+    #[test]
+    fn group_couple_test() {
+        let g1 = group_couple("ABCD");
+        let g2 = group_couple("ABCDE");
+        let g3 = group_couple("");
+        let g4 = group_couple(" a bc");
+
+        assert_eq!(
+            g1,
+            vec!["AB".to_string(), "CD".to_string()],
+            "Grouping #1 failed."
+        );
+        assert_eq!(
+            g2,
+            vec!["AB".to_string(), "CD".to_string(), "E".to_string()],
+            "Grouping #2 failed."
+        );
+        assert_eq!(g3, Vec::<String>::new(), "Grouping #3 failed.");
+        assert_eq!(
+            g4,
+            vec![" a".to_string(), " b".to_string(), "c".to_string()],
+            "Grouping #4 failed."
+        );
+    }
 }

@@ -23,7 +23,7 @@ fn main() {
         }
     };
 
-    let mut memory = vec![0; parse_toml::parse_memory(&config.memory)];
+    let mut memory: Vec<u8> = vec![0; parse_toml::parse_memory(&config.memory)];
     let mut registers = registers::create_registers();
 
     let Ok(file_utf8) = fs::read(&config.file) else {

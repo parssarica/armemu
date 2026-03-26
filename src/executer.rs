@@ -1,7 +1,7 @@
 use crate::{dbgview::*, errormsg::*, instruction_parser::*, instructions::*, registers::*};
 use std::process::exit;
 
-pub fn execute(code: &Vec<Instruction>, registers: &mut Vec<Register>, _memory: &mut Vec<u8>) {
+pub fn execute(code: &Vec<Instruction>, registers: &mut Vec<Register>, mut memory: &mut Vec<u8>) {
     let mut ins_output: Result<(), String> = Ok(());
     let mut ins;
     let mut last_msg = String::new();
@@ -30,6 +30,8 @@ pub fn execute(code: &Vec<Instruction>, registers: &mut Vec<Register>, _memory: 
             "sub" => sub(registers, ins, &mut ins_output),
             "mul" => mul(registers, ins, &mut ins_output),
             "and" => and(registers, ins, &mut ins_output),
+            "ldr" => ldr(registers, ins, &mut ins_output, memory),
+            "str" => str(registers, ins, &mut ins_output, &mut memory),
             _ => {
                 fail(
                     registers,

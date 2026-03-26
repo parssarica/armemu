@@ -10,6 +10,30 @@ pub enum OperandType {
     Triple,
 }
 
+pub fn group_couple(s: &str) -> Vec<String> {
+    let mut j = String::new();
+    let mut out = Vec::new();
+    let mut k = 0;
+
+    for i in 0..s.len() {
+        if k < 2 {
+            j.push(s.chars().nth(i as usize).unwrap());
+        } else {
+            out.push(j);
+            j = String::from(s.chars().nth(i as usize).unwrap());
+            k = 0;
+        }
+
+        k += 1;
+    }
+
+    if j != "" {
+        out.push(j);
+    }
+
+    out
+}
+
 pub fn operand_check(
     instruction: &Instruction,
     op1_type: Option<OperandType>,
@@ -358,4 +382,127 @@ pub fn and(
     );
 
     *output = Ok(());
+}
+
+pub fn ldr(
+    registers: &mut Vec<Register>,
+    instruction: &Instruction,
+    output: &mut Result<(), String>,
+    memory: &Vec<u8>,
+) {
+    match operand_check(
+        instruction,
+        Some(OperandType::Register),
+        Some(OperandType::MemoryAddress),
+        None,
+        None,
+    ) {
+        Err(n) => {
+            *output = Err(n);
+            return;
+        }
+        Ok(_) => (),
+    }
+
+    let reg_name = instruction.op1.as_ref().unwrap().get_reg_value().unwrap();
+    let addr = match get_register_value(registers, reg_name).unwrap() {
+        RegisterValue::Val32(n) => n as u64,
+        RegisterValue::Val64(n) => n,
+    };
+    let mut bytes = Vec::new();
+    let is_32_bit = match reg_name.chars().nth(0).unwrap() {
+        'W' => true,
+        _ => false,
+    };
+
+    for i in 0..(match is_32_bit {
+        true => 4,
+        false => 8,
+    }) {
+        bytes.push(match memory.get((addr + i) as usize) {
+            Some(n) => n,
+            None => {
+                *output = Err(String::from("Invalid memory address"));
+                return;
+            }
+        });
+    }
+
+    bytes.reverse();
+
+    if is_32_bit {
+        set_register_value(
+            registers,
+            reg_name,
+            match u32::from_str_radix(
+                &bytes
+                    .iter()
+                    .map(|x: &&u8| x.to_string())
+                    .collect::<Vec<String>>()
+                    .concat(),
+                16,
+            ) {
+                Ok(n) => RegisterValue::Val32(n),
+                Err(_) => {
+                    *output = Err("Problem when parsing data from memory".to_string());
+                    return;
+                }
+            },
+        );
+    } else {
+        set_register_value(
+            registers,
+            reg_name,
+            match u64::from_str_radix(
+                &bytes
+                    .iter()
+                    .map(|x: &&u8| x.to_string())
+                    .collect::<Vec<String>>()
+                    .concat(),
+                16,
+            ) {
+                Ok(n) => RegisterValue::Val64(n),
+                Err(_) => {
+                    *output = Err("Problem when parsing data from memory".to_string());
+                    return;
+                }
+            },
+        );
+    }
+}
+
+pub fn str(
+    registers: &Vec<Register>,
+    instruction: &Instruction,
+    output: &mut Result<(), String>,
+    memory: &mut Vec<u8>,
+) {
+    match operand_check(
+        instruction,
+        Some(OperandType::Register),
+        Some(OperandType::MemoryAddress),
+        None,
+        None,
+    ) {
+        Err(n) => {
+            *output = Err(n);
+            return;
+        }
+        Ok(_) => (),
+    }
+
+    let reg_name = instruction.op1.as_ref().unwrap().get_reg_value().unwrap();
+    let addr = match get_register_value(registers, reg_name).unwrap() {
+        RegisterValue::Val32(n) => n as u64,
+        RegisterValue::Val64(n) => n,
+    };
+    let bytes =
+        &group_couple(format!("{:X}", get_register_value(registers, reg_name).unwrap()).as_str())
+            [1..];
+    let mut j = 0;
+
+    for _ in bytes {
+        memory[(addr + j) as usize] = bytes.get(j as usize).unwrap().parse::<u8>().unwrap();
+        j += 1;
+    }
 }
