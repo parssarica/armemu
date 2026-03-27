@@ -46,6 +46,28 @@ pub struct Instruction {
     pub operand_count: u8,
 }
 
+impl MemoryAddress {
+    pub fn get_addr(&self, registers: &Vec<Register>) -> RegisterValue {
+        get_register_value(registers, &self.base_address).unwrap()
+            + match self.addr_type {
+                MemoryAddressType::Preindexed => self.second_val.unwrap(),
+                _ => RegisterValue::Val64(0),
+            }
+    }
+
+    pub fn change_reg(&self, registers: &mut Vec<Register>) {
+        match self.addr_type {
+            MemoryAddressType::Postindexed => set_register_value(
+                registers,
+                &self.base_address,
+                get_register_value(registers, &self.base_address).unwrap()
+                    + self.postindexval.unwrap(),
+            ),
+            _ => (),
+        }
+    }
+}
+
 impl Operand {
     pub fn get_reg_value(&self) -> Option<&str> {
         match self {

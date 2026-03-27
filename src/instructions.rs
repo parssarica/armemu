@@ -405,7 +405,12 @@ pub fn ldr(
     }
 
     let reg_name = instruction.op1.as_ref().unwrap().get_reg_value().unwrap();
-    let addr = match get_register_value(registers, reg_name).unwrap() {
+    let addr = match (match instruction.op2.as_ref().unwrap() {
+        Operand::OperandAddress(n) => n,
+        _ => unreachable!(),
+    })
+    .get_addr(registers)
+    {
         RegisterValue::Val32(n) => n as u64,
         RegisterValue::Val64(n) => n,
     };
@@ -437,7 +442,7 @@ pub fn ldr(
             match u32::from_str_radix(
                 &bytes
                     .iter()
-                    .map(|x: &&u8| x.to_string())
+                    .map(|x: &&u8| format!("{:X}", x))
                     .collect::<Vec<String>>()
                     .concat(),
                 16,
@@ -456,7 +461,7 @@ pub fn ldr(
             match u64::from_str_radix(
                 &bytes
                     .iter()
-                    .map(|x: &&u8| x.to_string())
+                    .map(|x: &&u8| format!("{:X}", x))
                     .collect::<Vec<String>>()
                     .concat(),
                 16,
@@ -469,10 +474,16 @@ pub fn ldr(
             },
         );
     }
+
+    (match instruction.op2.as_ref().unwrap() {
+        Operand::OperandAddress(n) => n,
+        _ => unreachable!(),
+    })
+    .change_reg(registers);
 }
 
 pub fn str(
-    registers: &Vec<Register>,
+    registers: &mut Vec<Register>,
     instruction: &Instruction,
     output: &mut Result<(), String>,
     memory: &mut Vec<u8>,
@@ -492,17 +503,33 @@ pub fn str(
     }
 
     let reg_name = instruction.op1.as_ref().unwrap().get_reg_value().unwrap();
-    let addr = match get_register_value(registers, reg_name).unwrap() {
+    let addr = match (match instruction.op2.as_ref().unwrap() {
+        Operand::OperandAddress(n) => n,
+        _ => unreachable!(),
+    })
+    .get_addr(registers)
+    {
         RegisterValue::Val32(n) => n as u64,
         RegisterValue::Val64(n) => n,
     };
-    let bytes =
-        &group_couple(format!("{:X}", get_register_value(registers, reg_name).unwrap()).as_str())
-            [1..];
+
+    let bytes: Vec<String> =
+        group_couple(format!("{:016X}", get_register_value(registers, reg_name).unwrap()).as_str())
+            .iter()
+            .rev()
+            .cloned()
+            .collect();
     let mut j = 0;
 
-    for _ in bytes {
-        memory[(addr + j) as usize] = bytes.get(j as usize).unwrap().parse::<u8>().unwrap();
+    for _ in &bytes {
+        memory[(addr + j) as usize] =
+            u8::from_str_radix(bytes.get(j as usize).unwrap(), 16).unwrap();
         j += 1;
     }
+
+    (match instruction.op2.as_ref().unwrap() {
+        Operand::OperandAddress(n) => n,
+        _ => unreachable!(),
+    })
+    .change_reg(registers);
 }

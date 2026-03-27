@@ -668,4 +668,140 @@ mod tests {
             "Grouping #4 failed."
         );
     }
+
+    #[test]
+    fn str_test() {
+        let mut registers = create_registers();
+        let mut memory: Vec<u8> = vec![0; 1024];
+        let mut output: Result<(), String> = Ok(());
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(314));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(512));
+        str(
+            &mut registers,
+            &Instruction {
+                name: String::from("STR"),
+                op1: Some(Operand::OperandRegister(String::from("X0"))),
+                op2: Some(Operand::OperandAddress(MemoryAddress {
+                    base_address: String::from("X1"),
+                    second_val: None,
+                    barrelshifter: None,
+                    postindexval: None,
+                    addr_type: MemoryAddressType::Normal,
+                })),
+                op3: None,
+                op4: None,
+                barrelshifter: None,
+                operand_count: 2,
+            },
+            &mut output,
+            &mut memory,
+        );
+
+        assert_eq!(memory[512], 58, "Byte #1 didn't match.");
+        assert_eq!(memory[513], 1, "Byte #2 didn't match.");
+        assert_eq!(memory[514], 0, "Byte #3 didn't match.");
+        assert_eq!(memory[515], 0, "Byte #4 didn't match.");
+        assert_eq!(memory[516], 0, "Byte #5 didn't match.");
+        assert_eq!(memory[517], 0, "Byte #6 didn't match.");
+        assert_eq!(memory[518], 0, "Byte #7 didn't match.");
+        assert_eq!(memory[519], 0, "Byte #8 didn't match.");
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(256));
+        str(
+            &mut registers,
+            &Instruction {
+                name: String::from("STR"),
+                op1: Some(Operand::OperandRegister(String::from("X0"))),
+                op2: Some(Operand::OperandAddress(MemoryAddress {
+                    base_address: String::from("X1"),
+                    second_val: None,
+                    barrelshifter: None,
+                    postindexval: Some(RegisterValue::Val64(58)),
+                    addr_type: MemoryAddressType::Postindexed,
+                })),
+                op3: None,
+                op4: None,
+                barrelshifter: None,
+                operand_count: 2,
+            },
+            &mut output,
+            &mut memory,
+        );
+
+        assert_eq!(memory[256], 58, "Byte #9 didn't match.");
+        assert_eq!(memory[257], 1, "Byte #10 didn't match.");
+        assert_eq!(memory[258], 0, "Byte #11 didn't match.");
+        assert_eq!(memory[259], 0, "Byte #12 didn't match.");
+        assert_eq!(memory[260], 0, "Byte #13 didn't match.");
+        assert_eq!(memory[261], 0, "Byte #14 didn't match.");
+        assert_eq!(memory[262], 0, "Byte #15 didn't match.");
+        assert_eq!(memory[263], 0, "Byte #16 didn't match.");
+
+        assert_eq!(
+            get_register_value(&registers, "X1").unwrap(),
+            RegisterValue::Val64(314),
+            "Post indexing not worked."
+        );
+    }
+
+    #[test]
+    fn ldr_test() {
+        let mut registers = create_registers();
+        let mut memory: Vec<u8> = vec![0; 1024];
+        let mut output: Result<(), String> = Ok(());
+        let ins = Instruction {
+            name: String::from("STR"),
+            op1: Some(Operand::OperandRegister(String::from("X0"))),
+            op2: Some(Operand::OperandAddress(MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            })),
+            op3: None,
+            op4: None,
+            barrelshifter: None,
+            operand_count: 2,
+        };
+
+        let ins2 = Instruction {
+            name: String::from("STR"),
+            op1: Some(Operand::OperandRegister(String::from("X0"))),
+            op2: Some(Operand::OperandAddress(MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: Some(RegisterValue::Val64(58)),
+                addr_type: MemoryAddressType::Postindexed,
+            })),
+            op3: None,
+            op4: None,
+            barrelshifter: None,
+            operand_count: 2,
+        };
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(314));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(512));
+        str(&mut registers, &ins, &mut output, &mut memory);
+
+        ldr(&mut registers, &ins, &mut output, &memory);
+        let value = get_register_value(&registers, "X0").unwrap();
+
+        assert_eq!(value, RegisterValue::Val64(314), "Value #1 didn't match.");
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(256));
+        str(&mut registers, &ins, &mut output, &mut memory);
+        ldr(&mut registers, &ins2, &mut output, &memory);
+        let value2 = get_register_value(&registers, "X0").unwrap();
+        let value3 = get_register_value(&registers, "X1").unwrap();
+
+        assert_eq!(value2, RegisterValue::Val64(314), "Value #2 didn't match.");
+        assert_eq!(
+            value3,
+            RegisterValue::Val64(314),
+            "Post indexing didn't work."
+        );
+    }
 }
