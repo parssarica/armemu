@@ -7,7 +7,7 @@ pub fn execute(code: &Vec<Instruction>, registers: &mut Vec<Register>, mut memor
     let mut last_msg = String::new();
 
     loop {
-        last_msg = debug_view(registers, code, &last_msg);
+        last_msg = debug_view(registers, code, &last_msg, &memory);
 
         ins = code
             .get(

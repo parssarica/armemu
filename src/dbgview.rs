@@ -38,6 +38,7 @@ pub fn debug_view(
     registers: &mut Vec<Register>,
     instructions: &Vec<Instruction>,
     last_msg: &str,
+    memory: &Vec<u8>,
 ) -> String {
     let pc = match get_register_value(registers, "PC") {
         Some(RegisterValue::Val64(n)) => n,
@@ -56,6 +57,10 @@ pub fn debug_view(
     let mut ins_to_print = vec![ins1];
     let mut trimmed_input;
     let mut parts: Vec<&str>;
+    let mut address;
+    let mut byte_count;
+    let mut j;
+    let mut k;
 
     if ins2.is_some() {
         ins_to_print.push(ins2.unwrap());
@@ -172,6 +177,7 @@ pub fn debug_view(
             println!("\tn\t\t\tContinues to next instruction");
             println!("\tq\t\t\tExits the program");
             println!("\tset\t\t\tChanges something depending on the arguments");
+            println!("\tv\t\t\tShows a memory region");
             println!("\thelp\t\t\tShows this help message");
         } else if trimmed_input.starts_with("set") {
             if parts.len() == 4 && parts[1] == "reg" {
@@ -209,6 +215,73 @@ pub fn debug_view(
                 } else {
                     fail_normal(&format!("No register found with name '{}'", parts[2]));
                 }
+            }
+        } else if parts[0] == "v" {
+            if parts.len() >= 2 {
+                address = match parts[1].parse::<u64>() {
+                    Ok(n) => n,
+                    Err(_) => match u64::from_str_radix(&parts[1].replace("0x", ""), 16) {
+                        Ok(n) => n,
+                        Err(_) => {
+                            fail_normal("Invalid address");
+                            exit(1);
+                        }
+                    },
+                };
+
+                byte_count = match parts.get(2) {
+                    Some(n) => n.parse::<u64>().unwrap_or_else(|_| {
+                        fail_normal("Invalid byte count");
+                        exit(1);
+                    }),
+                    None => 48,
+                };
+
+                j = 0;
+                k = 0;
+                i = 0;
+
+                loop {
+                    if i == 12 || j == byte_count {
+                        if i != 12 {
+                            print!("{}", "   ".repeat((12 - i) as usize));
+                        }
+
+                        print!("\x1b[90m|");
+                        for i in 0..12 {
+                            if memory[(address + k * 12 + i) as usize] < 32
+                                || memory[(address + k * 12 + i) as usize] > 126
+                            {
+                                print!(".");
+                            } else if memory[(address + k * 12 + i) as usize] == 46 {
+                                print!("\x1b[91m.\x1b[0m");
+                            } else {
+                                print!("{}", memory[(address + k * 12 + i) as usize] as char);
+                            }
+                        }
+                        k += 1;
+                        i = 0;
+                        println!("|\x1b[0m");
+                    }
+
+                    if j >= byte_count {
+                        break;
+                    }
+
+                    if i == 0 {
+                        print!("\x1b[1m\x1b[93m|{:#08X}|\x1b[0m ", address + k * 12);
+                    }
+
+                    print!(
+                        "\x1b[1m\x1b[94m{:02X}\x1b[0m ",
+                        memory[(address + k * 12 + i) as usize]
+                    );
+                    j += 1;
+                    i += 1;
+                }
+                println!();
+            } else {
+                fail_normal("Not enough arguments for command view");
             }
         } else {
             fail_normal(&format!("No command named '{}'", input.trim()));
