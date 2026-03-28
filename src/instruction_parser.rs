@@ -20,6 +20,7 @@ pub enum MemoryAddressType {
     Preindexed,
     Postindexed,
     Normal,
+    SetRegister,
 }
 
 pub struct MemoryAddress {
@@ -118,6 +119,9 @@ impl fmt::Display for Operand {
                                 s.barrelshifter.as_ref().unwrap()
                             )
                         }
+                        MemoryAddressType::SetRegister => {
+                            return write!(f, "={}", s.second_val.unwrap());
+                        }
                     }
                 } else {
                     match s.addr_type {
@@ -134,6 +138,9 @@ impl fmt::Display for Operand {
                             return write!(f, "[{}], #{}", s.base_address, s.postindexval.unwrap())
                         }
                         MemoryAddressType::Normal => return write!(f, "[{}]", s.base_address),
+                        MemoryAddressType::SetRegister => {
+                            return write!(f, "={}", s.second_val.unwrap());
+                        }
                     }
                 }
             }
@@ -224,6 +231,16 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
                 addr_type: addr_type,
             }))
         }
+    }
+
+    if line.chars().nth(0).unwrap() == '=' {
+        return Some(Operand::OperandAddress(MemoryAddress {
+            base_address: registername,
+            second_val: second_val,
+            barrelshifter: None,
+            postindexval: None,
+            addr_type: MemoryAddressType::SetRegister,
+        }));
     }
 
     match third_part {

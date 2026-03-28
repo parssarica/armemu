@@ -404,6 +404,24 @@ pub fn ldr(
         Ok(_) => (),
     }
 
+    let op1 = match instruction.op1.as_ref().unwrap() {
+        Operand::OperandRegister(n) => n,
+        _ => unreachable!(),
+    };
+
+    let op2 = match instruction.op2.as_ref().unwrap() {
+        Operand::OperandAddress(n) => n,
+        _ => unreachable!(),
+    };
+
+    match op2.addr_type {
+        MemoryAddressType::SetRegister => {
+            set_register_value(registers, &op1, op2.second_val.unwrap());
+            return;
+        }
+        _ => (),
+    }
+
     let reg_name = instruction.op1.as_ref().unwrap().get_reg_value().unwrap();
     let addr = match (match instruction.op2.as_ref().unwrap() {
         Operand::OperandAddress(n) => n,

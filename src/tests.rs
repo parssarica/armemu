@@ -767,7 +767,7 @@ mod tests {
         };
 
         let ins2 = Instruction {
-            name: String::from("STR"),
+            name: String::from("LDR"),
             op1: Some(Operand::OperandRegister(String::from("X0"))),
             op2: Some(Operand::OperandAddress(MemoryAddress {
                 base_address: String::from("X1"),
@@ -775,6 +775,22 @@ mod tests {
                 barrelshifter: None,
                 postindexval: Some(RegisterValue::Val64(58)),
                 addr_type: MemoryAddressType::Postindexed,
+            })),
+            op3: None,
+            op4: None,
+            barrelshifter: None,
+            operand_count: 2,
+        };
+
+        let ins3 = Instruction {
+            name: String::from("LDR"),
+            op1: Some(Operand::OperandRegister(String::from("X0"))),
+            op2: Some(Operand::OperandAddress(MemoryAddress {
+                base_address: String::from(""),
+                second_val: Some(RegisterValue::Val64(271)),
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::SetRegister,
             })),
             op3: None,
             op4: None,
@@ -803,5 +819,9 @@ mod tests {
             RegisterValue::Val64(314),
             "Post indexing didn't work."
         );
+
+        ldr(&mut registers, &ins3, &mut output, &memory);
+        let value4 = get_register_value(&registers, "X0").unwrap();
+        assert_eq!(value4, RegisterValue::Val64(271), "Value #3 didn't match.");
     }
 }
