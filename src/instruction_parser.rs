@@ -16,21 +16,31 @@ pub struct BarrelShifter {
     pub value: Option<RegisterValue>,
 }
 
+#[derive(Clone)]
 pub enum MemoryAddressType {
     Preindexed,
     Postindexed,
     Normal,
     SetRegister,
+    RegisterOffset,
 }
 
+#[derive(Clone)]
 pub struct MemoryAddress {
     pub base_address: String,
-    pub second_val: Option<RegisterValue>,
+    pub second_val: Option<MemoryAddressVal>,
     pub barrelshifter: Option<BarrelShifter>,
     pub postindexval: Option<RegisterValue>,
     pub addr_type: MemoryAddressType,
 }
 
+#[derive(Clone)]
+pub enum MemoryAddressVal {
+    ValRegister(String),
+    ValNumber(RegisterValue),
+}
+
+#[derive(Clone)]
 pub enum Operand {
     OperandRegister(String),
     OperandNumber(RegisterValue),
@@ -47,22 +57,149 @@ pub struct Instruction {
     pub operand_count: u8,
 }
 
+impl MemoryAddressVal {
+    pub fn get_val(&self, registers: &Vec<Register>) -> Option<RegisterValue> {
+        match self {
+            Self::ValRegister(n) => get_register_value(registers, n),
+            Self::ValNumber(n) => Some(*n),
+        }
+    }
+}
+
+impl BarrelShifter {
+    pub fn parse_val(
+        &self,
+        registers: &mut Vec<Register>,
+        regval: RegisterValue,
+    ) -> Option<RegisterValue> {
+        if self.value.is_none() {
+            return None;
+        }
+
+        match self.barrelshiftertype {
+            BarrelShifterType::LSL => {
+                let val = regval;
+                let n = self.value.unwrap();
+                set_flag(
+                    registers,
+                    "C",
+                    match (val >> RegisterValue::Val64(32 - n.convert_64())).convert_64() & 1 {
+                        0 => false,
+                        1 => true,
+                        _ => unreachable!(),
+                    },
+                );
+                Some(val << n)
+            }
+            BarrelShifterType::LSR => {
+                let val = regval;
+                let n = self.value.unwrap();
+                set_flag(
+                    registers,
+                    "C",
+                    match (val.convert_64() >> (n.convert_64() - 1)) & 1 {
+                        0 => false,
+                        1 => true,
+                        _ => unreachable!(),
+                    },
+                );
+                Some(val >> n)
+            }
+            BarrelShifterType::ASR => {
+                let val = (regval).convert_32() as i32;
+                let n = self.value.unwrap();
+                set_flag(
+                    registers,
+                    "C",
+                    match (val >> (n.convert_64() - 1)) & 1 {
+                        0 => false,
+                        1 => true,
+                        _ => unreachable!(),
+                    },
+                );
+                Some(RegisterValue::Val32(
+                    (val >> self.value.unwrap().convert_32()) as u32,
+                ))
+            }
+            BarrelShifterType::ROR => {
+                let val = regval;
+                let n = self.value.unwrap();
+
+                set_flag(
+                    registers,
+                    "C",
+                    match ((val >> RegisterValue::Val64(n.convert_64() - 1))
+                        & RegisterValue::Val64(1))
+                    .convert_64()
+                    {
+                        0 => false,
+                        1 => true,
+                        _ => unreachable!(),
+                    },
+                );
+                Some((val >> n) | (val << (RegisterValue::Val64(32) - n)))
+            }
+            BarrelShifterType::RRX => {
+                let val = regval;
+                set_flag(
+                    registers,
+                    "C",
+                    match val.convert_64() & 1 {
+                        0 => false,
+                        1 => true,
+                        _ => unreachable!(),
+                    },
+                );
+                Some(RegisterValue::Val64(
+                    (val.convert_64() >> 1)
+                        | ((match get_flag(registers, "C") {
+                            false => 0,
+                            true => 1,
+                        }) << 31),
+                ))
+            }
+        }
+    }
+}
+
 impl MemoryAddress {
     pub fn get_addr(&self, registers: &Vec<Register>) -> RegisterValue {
         get_register_value(registers, &self.base_address).unwrap()
             + match self.addr_type {
-                MemoryAddressType::Preindexed => self.second_val.unwrap(),
+                MemoryAddressType::Preindexed | MemoryAddressType::RegisterOffset => self
+                    .second_val
+                    .as_ref()
+                    .unwrap()
+                    .get_val(registers)
+                    .unwrap(),
                 _ => RegisterValue::Val64(0),
             }
     }
 
-    pub fn change_reg(&self, registers: &mut Vec<Register>) {
+    pub fn change_reg_postindex(&self, registers: &mut Vec<Register>) {
         match self.addr_type {
             MemoryAddressType::Postindexed => set_register_value(
                 registers,
                 &self.base_address,
                 get_register_value(registers, &self.base_address).unwrap()
                     + self.postindexval.unwrap(),
+            ),
+            _ => (),
+        }
+    }
+
+    pub fn change_reg_preindex(&self, registers: &mut Vec<Register>) {
+        match self.addr_type {
+            MemoryAddressType::Preindexed => set_register_value(
+                registers,
+                &self.base_address,
+                get_register_value(registers, &self.base_address).unwrap()
+                    + self
+                        .second_val
+                        .as_ref()
+                        .unwrap()
+                        .get_val(registers)
+                        .unwrap(),
             ),
             _ => (),
         }
@@ -85,20 +222,29 @@ impl Operand {
     }
 }
 
+impl fmt::Display for MemoryAddressVal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ValRegister(r) => write!(f, "{}", r),
+            Self::ValNumber(n) => write!(f, "{}", n),
+        }
+    }
+}
+
 impl fmt::Display for Operand {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::OperandRegister(s) => write!(f, "{}", s),
-            Self::OperandNumber(s) => write!(f, "{}", s),
+            Self::OperandNumber(s) => write!(f, "#{}", s),
             Self::OperandAddress(s) => {
                 if s.barrelshifter.is_some() {
                     match s.addr_type {
                         MemoryAddressType::Preindexed => {
                             return write!(
                                 f,
-                                "[{}, {}, {}]",
+                                "[{}, {}, {}]!",
                                 s.base_address,
-                                s.second_val.unwrap(),
+                                s.second_val.as_ref().unwrap(),
                                 s.barrelshifter.as_ref().unwrap()
                             )
                         }
@@ -120,7 +266,15 @@ impl fmt::Display for Operand {
                             )
                         }
                         MemoryAddressType::SetRegister => {
-                            return write!(f, "={}", s.second_val.unwrap());
+                            return write!(f, "={}", s.second_val.as_ref().unwrap());
+                        }
+                        MemoryAddressType::RegisterOffset => {
+                            return write!(
+                                f,
+                                "[{}, {}]",
+                                s.base_address,
+                                s.second_val.as_ref().unwrap()
+                            );
                         }
                     }
                 } else {
@@ -128,10 +282,9 @@ impl fmt::Display for Operand {
                         MemoryAddressType::Preindexed => {
                             return write!(
                                 f,
-                                "[{}, {}, {}]",
+                                "[{}, {}]!",
                                 s.base_address,
-                                s.second_val.unwrap(),
-                                s.barrelshifter.as_ref().unwrap()
+                                s.second_val.as_ref().unwrap()
                             )
                         }
                         MemoryAddressType::Postindexed => {
@@ -139,7 +292,15 @@ impl fmt::Display for Operand {
                         }
                         MemoryAddressType::Normal => return write!(f, "[{}]", s.base_address),
                         MemoryAddressType::SetRegister => {
-                            return write!(f, "={}", s.second_val.unwrap());
+                            return write!(f, "={}", s.second_val.as_ref().unwrap());
+                        }
+                        MemoryAddressType::RegisterOffset => {
+                            return write!(
+                                f,
+                                "[{}, {}]",
+                                s.base_address,
+                                s.second_val.as_ref().unwrap()
+                            );
                         }
                     }
                 }
@@ -159,7 +320,7 @@ impl fmt::Display for BarrelShifter {
         };
 
         match self.value {
-            Some(n) => write!(f, "{} {}", prefix, n),
+            Some(n) => write!(f, "{} #{}", prefix, n),
             None => write!(f, "{}", prefix),
         }
     }
@@ -174,15 +335,19 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
     let mut postindexval: Option<RegisterValue> = None;
     let mut addr_type: MemoryAddressType = MemoryAddressType::Normal;
     let mut barrelshifter: Option<BarrelShifter> = None;
-    let mut second_val: Option<RegisterValue> = None;
+    let mut second_val: Option<MemoryAddressVal> = None;
 
     if line.contains("!") {
         addr_type = MemoryAddressType::Preindexed;
     }
 
-    let address = line.replace("!", "").split(']').next()?.replace("[", "");
+    let address = line
+        .replace("!", "")
+        .replace("[", "")
+        .replace("]", "")
+        .replace(" ", "");
 
-    let first_part = address.split(",").next()?;
+    let first_part = address.split(',').next()?;
 
     let second_part = address.split(',').nth(1);
 
@@ -198,27 +363,28 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
 
     let value: RegisterValue;
 
-    registername = first_part.to_string();
+    registername = first_part.trim().to_string();
 
     match second_part {
         Some(n) => {
-            if n.starts_with("#") {
+            if n.trim().starts_with("#") {
                 match registername.chars().nth(0).unwrap() {
-                    'W' => value = RegisterValue::Val32(n[1..].parse::<u32>().ok()?),
-                    _ => value = RegisterValue::Val64(n[1..].parse::<u64>().ok()?),
+                    'W' => value = RegisterValue::Val32(n.trim()[1..].parse::<u32>().ok()?),
+                    _ => value = RegisterValue::Val64(n.trim()[1..].parse::<u64>().ok()?),
                 }
-                if line.find("]")? != line.len() - 1 {
+                if line.find("]")? != line.replace("!", "").len() - 1 {
                     postindexval = Some(value);
+                    addr_type = MemoryAddressType::Postindexed;
                 } else {
-                    second_val = Some(value);
+                    second_val = Some(MemoryAddressVal::ValNumber(value));
                 }
             } else {
-                value = get_register_value(registers, n)?;
+                value = get_register_value(registers, n.trim())?;
 
                 if line.find("]")? != line.len() - 1 {
                     postindexval = Some(value);
                 } else {
-                    second_val = Some(value);
+                    second_val = Some(MemoryAddressVal::ValRegister(n.trim().to_string()));
                 }
             }
         }
@@ -233,6 +399,10 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
         }
     }
 
+    if matches!(addr_type, MemoryAddressType::Normal) && second_val.is_some() {
+        addr_type = MemoryAddressType::RegisterOffset;
+    }
+
     if line.chars().nth(0).unwrap() == '=' {
         return Some(Operand::OperandAddress(MemoryAddress {
             base_address: registername,
@@ -245,12 +415,12 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
 
     match third_part {
         Some(n) => {
-            if n.starts_with("#") {
+            if n.trim().starts_with("#") {
                 postindexval = match registername.chars().nth(0).unwrap() {
-                    'W' => Some(RegisterValue::Val32(n[1..].parse::<u32>().ok()?)),
-                    _ => Some(RegisterValue::Val64(n[1..].parse::<u64>().ok()?)),
+                    'W' => Some(RegisterValue::Val32(n.trim()[1..].parse::<u32>().ok()?)),
+                    _ => Some(RegisterValue::Val64(n.trim()[1..].parse::<u64>().ok()?)),
                 }
-            } else if n.starts_with("LSL") {
+            } else if n.trim().starts_with("LSL") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::LSL,
                     value: match registername.chars().nth(0).unwrap() {
@@ -262,7 +432,7 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
                         )),
                     },
                 })
-            } else if n.starts_with("LSR") {
+            } else if n.trim().starts_with("LSR") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::LSR,
                     value: match registername.chars().nth(0).unwrap() {
@@ -274,7 +444,7 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
                         )),
                     },
                 })
-            } else if n.starts_with("ASR") {
+            } else if n.trim().starts_with("ASR") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::ASR,
                     value: match registername.chars().nth(0).unwrap() {
@@ -286,7 +456,7 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
                         )),
                     },
                 })
-            } else if n.starts_with("ROR") {
+            } else if n.trim().starts_with("ROR") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::ROR,
                     value: match registername.chars().nth(0).unwrap() {
@@ -298,7 +468,7 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
                         )),
                     },
                 })
-            } else if n.starts_with("RRX") {
+            } else if n.trim().starts_with("RRX") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::RRX,
                     value: match registername.chars().nth(0).unwrap() {
@@ -325,10 +495,10 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
 
     match fourth_part {
         Some(n) => {
-            if n.starts_with("#") {
+            if n.trim().starts_with("#") {
                 postindexval = match registername.chars().nth(0).unwrap() {
-                    'W' => Some(RegisterValue::Val32(n[1..].parse::<u32>().ok()?)),
-                    _ => Some(RegisterValue::Val64(n[1..].parse::<u64>().ok()?)),
+                    'W' => Some(RegisterValue::Val32(n.trim()[1..].parse::<u32>().ok()?)),
+                    _ => Some(RegisterValue::Val64(n.trim()[1..].parse::<u64>().ok()?)),
                 }
             }
         }
@@ -425,9 +595,29 @@ pub fn parse_instruction(line: &str, registers: &Vec<Register>) -> Option<Instru
                     .parse::<u64>()
                 {
                     Ok(n) => Some(Operand::OperandNumber(RegisterValue::Val64(n))),
-                    Err(_) => parse_memory_address(registers, part),
+                    Err(_) => match trimmed_parts[0]
+                        .trim_matches(|c: char| c == '#')
+                        .strip_prefix("0x")
+                    {
+                        Some(k) => Some(Operand::OperandNumber(RegisterValue::Val64(
+                            u64::from_str_radix(k, 16).ok()?,
+                        ))),
+                        None => parse_memory_address(registers, part),
+                    },
                 },
             };
+            match i {
+                0 => op1 = operand,
+                1 => op2 = operand,
+                2 => op3 = operand,
+                3 => op4 = operand,
+                _ => return None,
+            }
+
+            operand_count += 1;
+        } else if part.contains("[") {
+            operand = Some(parse_memory_address(registers, part)?);
+
             match i {
                 0 => op1 = operand,
                 1 => op2 = operand,
@@ -488,4 +678,15 @@ pub fn parse_file(registers: &Vec<Register>, file: &str) -> Option<Vec<Instructi
     }
 
     Some(code)
+}
+
+pub fn get_bit(val: RegisterValue, bit: u8) -> bool {
+    match match val {
+        RegisterValue::Val64(n) => (n >> bit) & 1,
+        RegisterValue::Val32(n) => ((n >> bit) & 1) as u64,
+    } {
+        0 => false,
+        1 => true,
+        _ => unreachable!(),
+    }
 }

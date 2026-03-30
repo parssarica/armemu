@@ -404,6 +404,12 @@ pub fn ldr(
         Ok(_) => (),
     }
 
+    (match instruction.op2.as_ref().unwrap() {
+        Operand::OperandAddress(n) => n,
+        _ => unreachable!(),
+    })
+    .change_reg_preindex(registers);
+
     let op1 = match instruction.op1.as_ref().unwrap() {
         Operand::OperandRegister(n) => n,
         _ => unreachable!(),
@@ -416,7 +422,11 @@ pub fn ldr(
 
     match op2.addr_type {
         MemoryAddressType::SetRegister => {
-            set_register_value(registers, &op1, op2.second_val.unwrap());
+            set_register_value(
+                registers,
+                &op1,
+                op2.second_val.as_ref().unwrap().get_val(registers).unwrap(),
+            );
             return;
         }
         _ => (),
@@ -497,7 +507,7 @@ pub fn ldr(
         Operand::OperandAddress(n) => n,
         _ => unreachable!(),
     })
-    .change_reg(registers);
+    .change_reg_postindex(registers);
 }
 
 pub fn str(
@@ -519,6 +529,12 @@ pub fn str(
         }
         Ok(_) => (),
     }
+
+    (match instruction.op2.as_ref().unwrap() {
+        Operand::OperandAddress(n) => n,
+        _ => unreachable!(),
+    })
+    .change_reg_preindex(registers);
 
     let reg_name = instruction.op1.as_ref().unwrap().get_reg_value().unwrap();
     let addr = match (match instruction.op2.as_ref().unwrap() {
@@ -549,5 +565,5 @@ pub fn str(
         Operand::OperandAddress(n) => n,
         _ => unreachable!(),
     })
-    .change_reg(registers);
+    .change_reg_postindex(registers);
 }

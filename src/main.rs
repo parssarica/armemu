@@ -36,10 +36,10 @@ fn main() {
         exit(1);
     };
 
-    let Some(code) = instruction_parser::parse_file(&registers, &file) else {
+    let Some(mut code) = instruction_parser::parse_file(&registers, &file) else {
         fail_normal(&format!("Input file '{}' is invalid.", config.file));
         exit(1);
     };
 
-    executer::execute(&code, &mut registers, &mut memory);
+    executer::execute(&mut code, &mut registers, &mut memory);
 }

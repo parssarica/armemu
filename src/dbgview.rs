@@ -94,23 +94,7 @@ pub fn debug_view(
 
         match &ins.barrelshifter {
             Some(n) => {
-                print!(
-                    ", {}",
-                    match n.barrelshiftertype {
-                        BarrelShifterType::LSL => "LSL",
-                        BarrelShifterType::LSR => "LSR",
-                        BarrelShifterType::ASR => "ASR",
-                        BarrelShifterType::ROR => "ROR",
-                        BarrelShifterType::RRX => "RRX",
-                    }
-                );
-                match n.value {
-                    Some(r) => match r {
-                        RegisterValue::Val64(v) => print!(" {}", v),
-                        RegisterValue::Val32(v) => print!(" {}", v),
-                    },
-                    None => (),
-                }
+                print!(", {}", n,);
             }
             None => (),
         }

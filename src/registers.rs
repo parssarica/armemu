@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, BitAnd, Mul, Sub};
+use std::ops::{Add, BitAnd, BitOr, Mul, Shl, Shr, Sub};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum RegisterValue {
@@ -76,6 +76,60 @@ impl BitAnd for RegisterValue {
         };
 
         RegisterValue::Val64(val1 & val2)
+    }
+}
+
+impl BitOr for RegisterValue {
+    type Output = RegisterValue;
+
+    fn bitor(self, other: RegisterValue) -> RegisterValue {
+        let val1 = match self {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        let val2 = match other {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        RegisterValue::Val64(val1 | val2)
+    }
+}
+
+impl Shl for RegisterValue {
+    type Output = RegisterValue;
+
+    fn shl(self, other: RegisterValue) -> RegisterValue {
+        let val1 = match self {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        let val2 = match other {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        RegisterValue::Val64(val1 << val2)
+    }
+}
+
+impl Shr for RegisterValue {
+    type Output = RegisterValue;
+
+    fn shr(self, other: RegisterValue) -> RegisterValue {
+        let val1 = match self {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        let val2 = match other {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        RegisterValue::Val64(val1 >> val2)
     }
 }
 
