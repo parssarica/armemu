@@ -220,6 +220,14 @@ impl Operand {
             _ => None,
         }
     }
+
+    pub fn convert_reg_val(&self, registers: &Vec<Register>) -> Option<RegisterValue> {
+        match self {
+            Self::OperandRegister(n) => Some(get_register_value(registers, n)?),
+            Self::OperandNumber(n) => Some(*n),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for MemoryAddressVal {

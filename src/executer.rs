@@ -26,12 +26,13 @@ pub fn execute(
     registers: &mut Vec<Register>,
     mut memory: &mut Vec<u8>,
 ) {
-    let mut ins_output: Result<(), String> = Ok(());
+    let ins_output: Result<(), String> = Ok(());
     let mut ins;
     let mut last_msg = String::new();
     let mut new_op: Option<Operand> = None;
     let mut old_val: Option<RegisterValue>;
     let mut register_barrel_shifter: Option<String>;
+    let mut converted: Instructions;
 
     loop {
         last_msg = debug_view(registers, code, &last_msg, &memory);
@@ -116,21 +117,43 @@ pub fn execute(
             ins.op2 = new_op.clone();
         }
 
-        match ins.name.to_lowercase().as_str() {
-            "mov" => mov(registers, ins, &mut ins_output),
-            "add" => add(registers, ins, &mut ins_output),
-            "sub" => sub(registers, ins, &mut ins_output),
-            "mul" => mul(registers, ins, &mut ins_output),
-            "and" => and(registers, ins, &mut ins_output),
-            "ldr" => ldr(registers, ins, &mut ins_output, memory),
-            "str" => str(registers, ins, &mut ins_output, &mut memory),
-            _ => {
-                fail(
-                    registers,
-                    &format!("Unknown instruction '{}'", ins.name.as_str().to_lowercase()),
-                );
-                exit(1);
-            }
+        converted = convert_ins(&ins).unwrap_or_else(|n| {
+            fail(registers, &format!("{}", n));
+            exit(1);
+        });
+
+        match converted {
+            Instructions::Mov { ref op1, op2 } => mov(registers, op1, op2),
+            Instructions::Add {
+                ref op1,
+                ref op2,
+                op3,
+            } => add(registers, op1, op2, op3),
+            Instructions::Sub {
+                ref op1,
+                ref op2,
+                op3,
+            } => sub(registers, op1, op2, op3),
+            Instructions::Mul {
+                ref op1,
+                ref op2,
+                op3,
+            } => mul(registers, op1, op2, op3),
+            Instructions::And {
+                ref op1,
+                ref op2,
+                op3,
+            } => and(registers, op1, op2, op3),
+            Instructions::Ldr { ref op1, ref op2 } => ldr(registers, op1, op2, memory)
+                .unwrap_or_else(|n| {
+                    fail(registers, &n);
+                    exit(1);
+                }),
+            Instructions::Str { ref op1, op2 } => str(registers, op1, op2, &mut memory)
+                .unwrap_or_else(|n| {
+                    fail(registers, &n);
+                    exit(1);
+                }),
         }
 
         match ins_output {

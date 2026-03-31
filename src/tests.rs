@@ -338,10 +338,12 @@ mod tests {
             operand_count: 2,
         };
 
-        let mut res1 = Ok(());
-        mov(&mut registers, &ins, &mut res1);
+        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Mov { ref op1, op2 } => mov(&mut registers, op1, op2),
+            _ => panic!("convert_ins converted wrongly."),
+        }
 
-        assert!(res1.is_ok(), "Instruction failed for no reason.");
         assert_eq!(
             get_register(&registers, "X0").unwrap().value,
             RegisterValue::Val64(314),
@@ -364,10 +366,16 @@ mod tests {
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(2827));
 
-        let mut res1 = Ok(());
-        add(&mut registers, &ins, &mut res1);
+        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Add {
+                ref op1,
+                ref op2,
+                op3,
+            } => add(&mut registers, op1, op2, op3),
+            _ => panic!("convert_ins converted wrongly."),
+        }
 
-        assert!(res1.is_ok(), "Instruction failed for no reason.");
         assert_eq!(
             get_register(&registers, "X0").unwrap().value,
             RegisterValue::Val64(3141),
@@ -390,10 +398,16 @@ mod tests {
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(3455));
 
-        let mut res1 = Ok(());
-        sub(&mut registers, &ins, &mut res1);
+        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Sub {
+                ref op1,
+                ref op2,
+                op3,
+            } => sub(&mut registers, op1, op2, op3),
+            _ => panic!("convert_ins converted wrongly."),
+        }
 
-        assert!(res1.is_ok(), "Instruction failed for no reason.");
         assert_eq!(
             get_register(&registers, "X0").unwrap().value,
             RegisterValue::Val64(3141),
@@ -405,7 +419,7 @@ mod tests {
     fn mul_test() {
         let mut registers = create_registers();
         let ins = Instruction {
-            name: String::from("SUB"),
+            name: String::from("MUL"),
             op1: Some(Operand::OperandRegister(String::from("X0"))),
             op2: Some(Operand::OperandRegister(String::from("X1"))),
             op3: Some(Operand::OperandRegister(String::from("X2"))),
@@ -417,10 +431,16 @@ mod tests {
         set_register_value(&mut registers, "X1", RegisterValue::Val64(349));
         set_register_value(&mut registers, "X2", RegisterValue::Val64(9));
 
-        let mut res1 = Ok(());
-        mul(&mut registers, &ins, &mut res1);
+        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Mul {
+                ref op1,
+                ref op2,
+                op3,
+            } => mul(&mut registers, op1, op2, op3),
+            _ => panic!("convert_ins converted wrongly."),
+        }
 
-        assert!(res1.is_ok(), "Instruction failed for no reason.");
         assert_eq!(
             get_register(&registers, "X0").unwrap().value,
             RegisterValue::Val64(3141),
@@ -432,7 +452,7 @@ mod tests {
     fn and_test() {
         let mut registers = create_registers();
         let ins = Instruction {
-            name: String::from("SUB"),
+            name: String::from("AND"),
             op1: Some(Operand::OperandRegister(String::from("X0"))),
             op2: Some(Operand::OperandRegister(String::from("X1"))),
             op3: Some(Operand::OperandNumber(RegisterValue::Val64(12))),
@@ -443,10 +463,16 @@ mod tests {
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(24));
 
-        let mut res1 = Ok(());
-        and(&mut registers, &ins, &mut res1);
+        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::And {
+                ref op1,
+                ref op2,
+                op3,
+            } => and(&mut registers, op1, op2, op3),
+            _ => panic!("convert_ins converted wrongly."),
+        }
 
-        assert!(res1.is_ok(), "Instruction failed for no reason.");
         assert_eq!(
             get_register(&registers, "X0").unwrap().value,
             RegisterValue::Val64(8),
@@ -673,30 +699,46 @@ mod tests {
     fn str_test() {
         let mut registers = create_registers();
         let mut memory: Vec<u8> = vec![0; 1024];
-        let mut output: Result<(), String> = Ok(());
+        let ins1 = Instruction {
+            name: String::from("STR"),
+            op1: Some(Operand::OperandRegister(String::from("X0"))),
+            op2: Some(Operand::OperandAddress(MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            })),
+            op3: None,
+            op4: None,
+            barrelshifter: None,
+            operand_count: 2,
+        };
+        let ins2 = Instruction {
+            name: String::from("STR"),
+            op1: Some(Operand::OperandRegister(String::from("X0"))),
+            op2: Some(Operand::OperandAddress(MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: Some(RegisterValue::Val64(58)),
+                addr_type: MemoryAddressType::Postindexed,
+            })),
+            op3: None,
+            op4: None,
+            barrelshifter: None,
+            operand_count: 2,
+        };
 
         set_register_value(&mut registers, "X0", RegisterValue::Val64(314));
         set_register_value(&mut registers, "X1", RegisterValue::Val64(512));
-        str(
-            &mut registers,
-            &Instruction {
-                name: String::from("STR"),
-                op1: Some(Operand::OperandRegister(String::from("X0"))),
-                op2: Some(Operand::OperandAddress(MemoryAddress {
-                    base_address: String::from("X1"),
-                    second_val: None,
-                    barrelshifter: None,
-                    postindexval: None,
-                    addr_type: MemoryAddressType::Normal,
-                })),
-                op3: None,
-                op4: None,
-                barrelshifter: None,
-                operand_count: 2,
-            },
-            &mut output,
-            &mut memory,
-        );
+
+        let converted = convert_ins(&ins1).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Str { ref op1, op2 } => str(&mut registers, op1, op2, &mut memory)
+                .expect("Instruction failed for no reason."),
+            _ => panic!("convert_ins converted wrongly."),
+        }
 
         assert_eq!(memory[512], 58, "Byte #1 didn't match.");
         assert_eq!(memory[513], 1, "Byte #2 didn't match.");
@@ -708,26 +750,13 @@ mod tests {
         assert_eq!(memory[519], 0, "Byte #8 didn't match.");
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(256));
-        str(
-            &mut registers,
-            &Instruction {
-                name: String::from("STR"),
-                op1: Some(Operand::OperandRegister(String::from("X0"))),
-                op2: Some(Operand::OperandAddress(MemoryAddress {
-                    base_address: String::from("X1"),
-                    second_val: None,
-                    barrelshifter: None,
-                    postindexval: Some(RegisterValue::Val64(58)),
-                    addr_type: MemoryAddressType::Postindexed,
-                })),
-                op3: None,
-                op4: None,
-                barrelshifter: None,
-                operand_count: 2,
-            },
-            &mut output,
-            &mut memory,
-        );
+
+        let converted = convert_ins(&ins2).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Str { ref op1, op2 } => str(&mut registers, op1, op2, &mut memory)
+                .expect("Instruction failed for no reason."),
+            _ => panic!("convert_ins converted wrongly."),
+        }
 
         assert_eq!(memory[256], 58, "Byte #9 didn't match.");
         assert_eq!(memory[257], 1, "Byte #10 didn't match.");
@@ -749,7 +778,6 @@ mod tests {
     fn ldr_test() {
         let mut registers = create_registers();
         let mut memory: Vec<u8> = vec![0; 1024];
-        let mut output: Result<(), String> = Ok(());
         let ins = Instruction {
             name: String::from("STR"),
             op1: Some(Operand::OperandRegister(String::from("X0"))),
@@ -787,7 +815,7 @@ mod tests {
             op1: Some(Operand::OperandRegister(String::from("X0"))),
             op2: Some(Operand::OperandAddress(MemoryAddress {
                 base_address: String::from(""),
-                second_val: Some(RegisterValue::Val64(271)),
+                second_val: Some(MemoryAddressVal::ValNumber(RegisterValue::Val64(271))),
                 barrelshifter: None,
                 postindexval: None,
                 addr_type: MemoryAddressType::SetRegister,
@@ -800,16 +828,41 @@ mod tests {
 
         set_register_value(&mut registers, "X0", RegisterValue::Val64(314));
         set_register_value(&mut registers, "X1", RegisterValue::Val64(512));
-        str(&mut registers, &ins, &mut output, &mut memory);
+        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Str { ref op1, op2 } => str(&mut registers, op1, op2, &mut memory)
+                .expect("Instruction failed for no reason."),
+            _ => panic!("convert_ins converted wrongly."),
+        }
 
-        ldr(&mut registers, &ins, &mut output, &memory);
+        let converted = convert_ins(&ins2).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Ldr { ref op1, ref op2 } => {
+                ldr(&mut registers, op1, op2, &memory).expect("Instruction failed for no reason.")
+            }
+            _ => panic!("convert_ins converted wrongly."),
+        }
+
         let value = get_register_value(&registers, "X0").unwrap();
 
         assert_eq!(value, RegisterValue::Val64(314), "Value #1 didn't match.");
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(256));
-        str(&mut registers, &ins, &mut output, &mut memory);
-        ldr(&mut registers, &ins2, &mut output, &memory);
+        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Str { ref op1, op2 } => str(&mut registers, op1, op2, &mut memory)
+                .expect("Instruction failed for no reason."),
+            _ => panic!("convert_ins converted wrongly."),
+        }
+
+        let converted = convert_ins(&ins2).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Ldr { ref op1, ref op2 } => {
+                ldr(&mut registers, op1, op2, &memory).expect("Instruction failed for no reason.")
+            }
+            _ => panic!("convert_ins converted wrongly."),
+        }
+
         let value2 = get_register_value(&registers, "X0").unwrap();
         let value3 = get_register_value(&registers, "X1").unwrap();
 
@@ -820,7 +873,14 @@ mod tests {
             "Post indexing didn't work."
         );
 
-        ldr(&mut registers, &ins3, &mut output, &memory);
+        let converted = convert_ins(&ins3).expect("Conversion failed for no reason.");
+        match converted {
+            Instructions::Ldr { ref op1, ref op2 } => {
+                ldr(&mut registers, op1, op2, &memory).expect("Instruction failed for no reason.")
+            }
+            _ => panic!("convert_ins converted wrongly."),
+        }
+
         let value4 = get_register_value(&registers, "X0").unwrap();
         assert_eq!(value4, RegisterValue::Val64(271), "Value #3 didn't match.");
     }

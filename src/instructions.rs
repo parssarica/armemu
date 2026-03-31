@@ -10,6 +10,171 @@ pub enum OperandType {
     Triple,
 }
 
+pub enum Instructions {
+    Mov {
+        op1: String,
+        op2: Operand,
+    },
+    Add {
+        op1: String,
+        op2: String,
+        op3: Operand,
+    },
+    Sub {
+        op1: String,
+        op2: String,
+        op3: Operand,
+    },
+    Mul {
+        op1: String,
+        op2: String,
+        op3: Operand,
+    },
+    And {
+        op1: String,
+        op2: String,
+        op3: Operand,
+    },
+    Ldr {
+        op1: String,
+        op2: MemoryAddress,
+    },
+    Str {
+        op1: String,
+        op2: MemoryAddress,
+    },
+}
+
+pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
+    match ins.name.to_lowercase().as_str() {
+        "mov" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
+            None,
+            None,
+        )?,
+        "add" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
+            None,
+        )?,
+        "sub" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
+            None,
+        )?,
+        "mul" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
+            None,
+        )?,
+        "and" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
+            None,
+        )?,
+        "ldr" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::MemoryAddress),
+            None,
+            None,
+        )?,
+        "str" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::MemoryAddress),
+            None,
+            None,
+        )?,
+        _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
+    }
+
+    Ok(match ins.name.to_lowercase().as_str() {
+        "mov" => Instructions::Mov {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: ins.op2.as_ref().unwrap().clone(),
+        },
+        "add" => Instructions::Add {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: match ins.op2.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op3: ins.op3.as_ref().unwrap().clone(),
+        },
+        "sub" => Instructions::Sub {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: match ins.op2.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op3: ins.op3.as_ref().unwrap().clone(),
+        },
+        "mul" => Instructions::Mul {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: match ins.op2.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op3: ins.op3.as_ref().unwrap().clone(),
+        },
+        "and" => Instructions::And {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: match ins.op2.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op3: ins.op3.as_ref().unwrap().clone(),
+        },
+        "ldr" => Instructions::Ldr {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: match ins.op2.as_ref().unwrap() {
+                Operand::OperandAddress(n) => n.clone(),
+                _ => unreachable!(),
+            },
+        },
+        "str" => Instructions::Str {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: match ins.op2.as_ref().unwrap() {
+                Operand::OperandAddress(n) => n.clone(),
+                _ => unreachable!(),
+            },
+        },
+        _ => unreachable!(),
+    })
+}
+
 pub fn group_couple(s: &str) -> Vec<String> {
     let mut j = String::new();
     let mut out = Vec::new();
@@ -161,289 +326,71 @@ pub fn operand_check(
     Ok(())
 }
 
-pub fn mov(
-    registers: &mut Vec<Register>,
-    instruction: &Instruction,
-    output: &mut Result<(), String>,
-) {
-    match operand_check(
-        instruction,
-        Some(OperandType::Register),
-        Some(OperandType::RegImm),
-        None,
-        None,
-    ) {
-        Err(n) => {
-            *output = Err(n);
-            return;
-        }
-        Ok(_) => (),
-    }
+pub fn mov(registers: &mut Vec<Register>, op1: &str, op2: Operand) {
+    let op2_val = match op2 {
+        Operand::OperandRegister(ref n) => get_register_value(registers, n).unwrap(),
+        Operand::OperandNumber(n) => n,
+        _ => unreachable!(),
+    };
 
-    set_register_value(
-        registers,
-        instruction.op1.as_ref().unwrap().get_reg_value().unwrap(),
-        match &instruction.op2 {
-            Some(Operand::OperandRegister(n)) => match get_register(registers, &n) {
-                Some(n2) => n2.value,
-                _ => unreachable!(),
-            },
-            Some(Operand::OperandNumber(n)) => *n,
-            _ => unreachable!(),
-        },
-    );
-
-    *output = Ok(());
+    set_register_value(registers, op1, op2_val);
 }
 
-pub fn add(
-    registers: &mut Vec<Register>,
-    instruction: &Instruction,
-    output: &mut Result<(), String>,
-) {
-    match operand_check(
-        instruction,
-        Some(OperandType::Register),
-        Some(OperandType::Register),
-        Some(OperandType::RegImm),
-        None,
-    ) {
-        Err(n) => {
-            *output = Err(n);
-            return;
-        }
-        Ok(_) => (),
-    }
-
-    let register_name = &(get_register(
-        registers,
-        instruction.op1.as_ref().unwrap().get_reg_value().unwrap(),
-    )
-    .unwrap()
-    .name
-    .clone());
-
+pub fn add(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: Operand) {
     set_register_value(
         registers,
-        &register_name,
-        (get_register(
-            registers,
-            instruction.op2.as_ref().unwrap().get_reg_value().unwrap(),
-        )
-        .unwrap()
-        .value
-            + match instruction.op3.as_ref().unwrap() {
-                Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
-                Operand::OperandNumber(n) => *n,
-                _ => unreachable!(),
-            })
-        .convert_reg(&register_name),
+        op1,
+        get_register_value(registers, op2).unwrap() + op3.convert_reg_val(registers).unwrap(),
     );
-
-    *output = Ok(());
 }
 
-pub fn sub(
-    registers: &mut Vec<Register>,
-    instruction: &Instruction,
-    output: &mut Result<(), String>,
-) {
-    match operand_check(
-        instruction,
-        Some(OperandType::Register),
-        Some(OperandType::Register),
-        Some(OperandType::RegImm),
-        None,
-    ) {
-        Err(n) => {
-            *output = Err(n);
-            return;
-        }
-        Ok(_) => (),
-    }
-
-    let register_name = &(get_register(
-        registers,
-        instruction.op1.as_ref().unwrap().get_reg_value().unwrap(),
-    )
-    .unwrap()
-    .name
-    .clone());
-
+pub fn sub(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: Operand) {
     set_register_value(
         registers,
-        &register_name,
-        (get_register(
-            registers,
-            instruction.op2.as_ref().unwrap().get_reg_value().unwrap(),
-        )
-        .unwrap()
-        .value
-            - match instruction.op3.as_ref().unwrap() {
-                Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
-                Operand::OperandNumber(n) => *n,
-                _ => unreachable!(),
-            })
-        .convert_reg(&register_name),
+        op1,
+        get_register_value(registers, op2).unwrap() - op3.convert_reg_val(registers).unwrap(),
     );
-
-    *output = Ok(());
 }
 
-pub fn mul(
-    registers: &mut Vec<Register>,
-    instruction: &Instruction,
-    output: &mut Result<(), String>,
-) {
-    match operand_check(
-        instruction,
-        Some(OperandType::Register),
-        Some(OperandType::Register),
-        Some(OperandType::RegImm),
-        None,
-    ) {
-        Err(n) => {
-            *output = Err(n);
-            return;
-        }
-        Ok(_) => (),
-    }
-
-    let register_name = &(get_register(
-        registers,
-        instruction.op1.as_ref().unwrap().get_reg_value().unwrap(),
-    )
-    .unwrap()
-    .name
-    .clone());
-
+pub fn mul(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: Operand) {
     set_register_value(
         registers,
-        &register_name,
-        (get_register(
-            registers,
-            instruction.op2.as_ref().unwrap().get_reg_value().unwrap(),
-        )
-        .unwrap()
-        .value
-            * match instruction.op3.as_ref().unwrap() {
-                Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
-                Operand::OperandNumber(n) => *n,
-                _ => unreachable!(),
-            })
-        .convert_reg(&register_name),
+        op1,
+        get_register_value(registers, op2).unwrap() * op3.convert_reg_val(registers).unwrap(),
     );
-
-    *output = Ok(());
 }
 
-pub fn and(
-    registers: &mut Vec<Register>,
-    instruction: &Instruction,
-    output: &mut Result<(), String>,
-) {
-    match operand_check(
-        instruction,
-        Some(OperandType::Register),
-        Some(OperandType::Register),
-        Some(OperandType::RegImm),
-        None,
-    ) {
-        Err(n) => {
-            *output = Err(n);
-            return;
-        }
-        Ok(_) => (),
-    }
-
-    let register_name = &(get_register(
-        registers,
-        instruction.op1.as_ref().unwrap().get_reg_value().unwrap(),
-    )
-    .unwrap()
-    .name
-    .clone());
-
+pub fn and(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: Operand) {
     set_register_value(
         registers,
-        &register_name,
-        (get_register(
-            registers,
-            instruction.op2.as_ref().unwrap().get_reg_value().unwrap(),
-        )
-        .unwrap()
-        .value
-            & match instruction.op3.as_ref().unwrap() {
-                Operand::OperandRegister(n) => get_register(registers, &n).unwrap().value,
-                Operand::OperandNumber(n) => *n,
-                _ => unreachable!(),
-            })
-        .convert_reg(&register_name),
+        op1,
+        get_register_value(registers, op2).unwrap() & op3.convert_reg_val(registers).unwrap(),
     );
-
-    *output = Ok(());
 }
 
 pub fn ldr(
     registers: &mut Vec<Register>,
-    instruction: &Instruction,
-    output: &mut Result<(), String>,
+    op1: &str,
+    op2: &MemoryAddress,
     memory: &Vec<u8>,
-) {
-    match operand_check(
-        instruction,
-        Some(OperandType::Register),
-        Some(OperandType::MemoryAddress),
-        None,
-        None,
-    ) {
-        Err(n) => {
-            *output = Err(n);
-            return;
-        }
-        Ok(_) => (),
-    }
-
-    (match instruction.op2.as_ref().unwrap() {
-        Operand::OperandAddress(n) => n,
-        _ => unreachable!(),
-    })
-    .change_reg_preindex(registers);
-
-    let op1 = match instruction.op1.as_ref().unwrap() {
-        Operand::OperandRegister(n) => n,
-        _ => unreachable!(),
-    };
-
-    let op2 = match instruction.op2.as_ref().unwrap() {
-        Operand::OperandAddress(n) => n,
-        _ => unreachable!(),
-    };
+) -> Result<(), String> {
+    op2.change_reg_preindex(registers);
 
     match op2.addr_type {
         MemoryAddressType::SetRegister => {
             set_register_value(
                 registers,
-                &op1,
+                op1,
                 op2.second_val.as_ref().unwrap().get_val(registers).unwrap(),
             );
-            return;
+            return Ok(());
         }
         _ => (),
     }
 
-    let reg_name = instruction.op1.as_ref().unwrap().get_reg_value().unwrap();
-    let addr = match (match instruction.op2.as_ref().unwrap() {
-        Operand::OperandAddress(n) => n,
-        _ => unreachable!(),
-    })
-    .get_addr(registers)
-    {
-        RegisterValue::Val32(n) => n as u64,
-        RegisterValue::Val64(n) => n,
-    };
+    let addr = op2.get_addr(registers).convert_64();
     let mut bytes = Vec::new();
-    let is_32_bit = match reg_name.chars().nth(0).unwrap() {
+    let is_32_bit = match op1.chars().nth(0).unwrap() {
         'W' => true,
         _ => false,
     };
@@ -455,8 +402,7 @@ pub fn ldr(
         bytes.push(match memory.get((addr + i) as usize) {
             Some(n) => n,
             None => {
-                *output = Err(String::from("Invalid memory address"));
-                return;
+                return Err(String::from("Invalid memory address"));
             }
         });
     }
@@ -466,7 +412,7 @@ pub fn ldr(
     if is_32_bit {
         set_register_value(
             registers,
-            reg_name,
+            op1,
             match u32::from_str_radix(
                 &bytes
                     .iter()
@@ -477,15 +423,14 @@ pub fn ldr(
             ) {
                 Ok(n) => RegisterValue::Val32(n),
                 Err(_) => {
-                    *output = Err("Problem when parsing data from memory".to_string());
-                    return;
+                    return Err("Problem when parsing data from memory".to_string());
                 }
             },
         );
     } else {
         set_register_value(
             registers,
-            reg_name,
+            op1,
             match u64::from_str_radix(
                 &bytes
                     .iter()
@@ -496,64 +441,38 @@ pub fn ldr(
             ) {
                 Ok(n) => RegisterValue::Val64(n),
                 Err(_) => {
-                    *output = Err("Problem when parsing data from memory".to_string());
-                    return;
+                    return Err("Problem when parsing data from memory".to_string());
                 }
             },
         );
     }
 
-    (match instruction.op2.as_ref().unwrap() {
-        Operand::OperandAddress(n) => n,
-        _ => unreachable!(),
-    })
-    .change_reg_postindex(registers);
+    op2.change_reg_postindex(registers);
+
+    Ok(())
 }
 
 pub fn str(
     registers: &mut Vec<Register>,
-    instruction: &Instruction,
-    output: &mut Result<(), String>,
+    op1: &str,
+    op2: MemoryAddress,
     memory: &mut Vec<u8>,
-) {
-    match operand_check(
-        instruction,
-        Some(OperandType::Register),
-        Some(OperandType::MemoryAddress),
-        None,
-        None,
-    ) {
-        Err(n) => {
-            *output = Err(n);
-            return;
-        }
-        Ok(_) => (),
-    }
+) -> Result<(), String> {
+    op2.change_reg_preindex(registers);
 
-    (match instruction.op2.as_ref().unwrap() {
-        Operand::OperandAddress(n) => n,
-        _ => unreachable!(),
-    })
-    .change_reg_preindex(registers);
-
-    let reg_name = instruction.op1.as_ref().unwrap().get_reg_value().unwrap();
-    let addr = match (match instruction.op2.as_ref().unwrap() {
-        Operand::OperandAddress(n) => n,
-        _ => unreachable!(),
-    })
-    .get_addr(registers)
-    {
-        RegisterValue::Val32(n) => n as u64,
-        RegisterValue::Val64(n) => n,
-    };
+    let addr = op2.get_addr(registers).convert_64();
 
     let bytes: Vec<String> =
-        group_couple(format!("{:016X}", get_register_value(registers, reg_name).unwrap()).as_str())
+        group_couple(format!("{:016X}", get_register_value(registers, op1).unwrap()).as_str())
             .iter()
             .rev()
             .cloned()
             .collect();
     let mut j = 0;
+
+    if (addr + (bytes.len() as u64) - 1) as usize >= memory.len() {
+        return Err("Invalid memory address".to_string());
+    }
 
     for _ in &bytes {
         memory[(addr + j) as usize] =
@@ -561,9 +480,7 @@ pub fn str(
         j += 1;
     }
 
-    (match instruction.op2.as_ref().unwrap() {
-        Operand::OperandAddress(n) => n,
-        _ => unreachable!(),
-    })
-    .change_reg_postindex(registers);
+    op2.change_reg_postindex(registers);
+
+    Ok(())
 }
