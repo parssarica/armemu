@@ -39,7 +39,14 @@ impl Sub for RegisterValue {
             Self::Val64(n) => n,
         };
 
-        RegisterValue::Val64(val1 - val2)
+        let res;
+        if val2 > val1 {
+            res = RegisterValue::Val64(18446744073709551615 - val2 + val1);
+        } else {
+            res = RegisterValue::Val64(val1 - val2);
+        }
+
+        res
     }
 }
 
