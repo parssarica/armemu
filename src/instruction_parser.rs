@@ -334,6 +334,40 @@ impl fmt::Display for BarrelShifter {
     }
 }
 
+pub fn is_label(line: &str) -> bool {
+    if line.len() <= 1 {
+        return false;
+    }
+
+    if !line.ends_with(":") {
+        return false;
+    }
+
+    if line[..(line.len() - 1)]
+        .chars()
+        .any(|i: char| i < '0' || (i > '9' && i < 'A') || (i > 'Z' && i < 'a') || i > 'z')
+    {
+        return false;
+    }
+
+    true
+}
+
+pub fn parse_labels(file: &str) -> Vec<(&str, u64)> {
+    let mut labels = Vec::new();
+    let mut i: u64 = 0;
+
+    for line in file.lines() {
+        if is_label(line.trim()) {
+            labels.push((&line.trim()[..(line.len() - 1)], i));
+        }
+
+        i += 1;
+    }
+
+    labels
+}
+
 pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Operand> {
     if !line.contains("[") || !line.contains("]") {
         return None;
@@ -570,7 +604,11 @@ pub fn magic_split(line: &str) -> Option<Vec<String>> {
     Some(parts)
 }
 
-pub fn parse_instruction(line: &str, registers: &Vec<Register>) -> Option<Instruction> {
+pub fn parse_instruction(
+    line: &str,
+    registers: &Vec<Register>,
+    labels: &Vec<(&str, u64)>,
+) -> Option<Instruction> {
     let mut i = 0;
     let mut trimmed_parts: Vec<&str>;
     let mut operand: Option<Operand>;
@@ -610,7 +648,13 @@ pub fn parse_instruction(line: &str, registers: &Vec<Register>) -> Option<Instru
                         Some(k) => Some(Operand::OperandNumber(RegisterValue::Val64(
                             u64::from_str_radix(k, 16).ok()?,
                         ))),
-                        None => parse_memory_address(registers, part),
+                        None => match parse_memory_address(registers, part) {
+                            Some(k) => Some(k),
+                            None => match labels.iter().find(|&&x| x.0 == part) {
+                                Some(k) => Some(Operand::OperandNumber(RegisterValue::Val64(k.1))),
+                                None => None,
+                            },
+                        },
                     },
                 },
             };
@@ -676,12 +720,20 @@ pub fn parse_instruction(line: &str, registers: &Vec<Register>) -> Option<Instru
     })
 }
 
-pub fn parse_file(registers: &Vec<Register>, file: &str) -> Option<Vec<Instruction>> {
+pub fn parse_file(
+    registers: &Vec<Register>,
+    file: &str,
+    labels: &Vec<(&str, u64)>,
+) -> Option<Vec<Instruction>> {
     let mut ins: Instruction;
     let mut code = Vec::new();
 
     for line in file.lines() {
-        ins = parse_instruction(line, registers)?;
+        if is_label(line) {
+            continue;
+        }
+
+        ins = parse_instruction(line, registers, labels)?;
         code.push(ins);
     }
 

@@ -36,7 +36,9 @@ fn main() {
         exit(1);
     };
 
-    let Some(mut code) = instruction_parser::parse_file(&registers, &file) else {
+    let labels = instruction_parser::parse_labels(&file);
+
+    let Some(mut code) = instruction_parser::parse_file(&registers, &file, &labels) else {
         fail_normal(&format!("Input file '{}' is invalid.", config.file));
         exit(1);
     };
