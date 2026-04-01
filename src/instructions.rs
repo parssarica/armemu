@@ -43,6 +43,10 @@ pub enum Instructions {
         op1: String,
         op2: MemoryAddress,
     },
+    Cmp {
+        op1: String,
+        op2: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
@@ -93,6 +97,13 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             ins,
             Some(OperandType::Register),
             Some(OperandType::MemoryAddress),
+            None,
+            None,
+        )?,
+        "cmp" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
             None,
             None,
         )?,
@@ -170,6 +181,13 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
                 Operand::OperandAddress(n) => n.clone(),
                 _ => unreachable!(),
             },
+        },
+        "cmp" => Instructions::Cmp {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: ins.op2.as_ref().unwrap().clone(),
         },
         _ => unreachable!(),
     })
@@ -483,4 +501,37 @@ pub fn str(
     op2.change_reg_postindex(registers);
 
     Ok(())
+}
+
+pub fn cmp(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
+    let op1_val = get_register_value(registers, op1).unwrap().convert_64() as i64;
+    let op2_val = op2.convert_reg_val(registers).unwrap().convert_64() as i64;
+
+    let subtraction = op1_val - op2_val;
+
+    if subtraction < 0 {
+        set_flag(registers, "N", true);
+    } else {
+        set_flag(registers, "N", false);
+    }
+
+    if subtraction == 0 {
+        set_flag(registers, "Z", true);
+    } else {
+        set_flag(registers, "Z", false);
+    }
+
+    if op1_val >= op2_val {
+        set_flag(registers, "C", true);
+    } else {
+        set_flag(registers, "C", false);
+    }
+
+    if (op1_val > 0 && op2_val > 0 && (op1_val.wrapping_add(op2_val)) < 0)
+        || (op1_val < 0 && op2_val < 0 && (op1_val.wrapping_add(op2_val)) > 0)
+    {
+        set_flag(registers, "V", true);
+    } else {
+        set_flag(registers, "V", false);
+    }
 }

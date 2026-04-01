@@ -884,4 +884,80 @@ mod tests {
         let value4 = get_register_value(&registers, "X0").unwrap();
         assert_eq!(value4, RegisterValue::Val64(271), "Value #3 didn't match.");
     }
+
+    #[test]
+    fn cmp_test() {
+        let mut registers = create_registers();
+        let ins = Instruction {
+            name: String::from("CMP"),
+            op1: Some(Operand::OperandRegister(String::from("X0"))),
+            op2: Some(Operand::OperandRegister(String::from("X1"))),
+            op3: None,
+            op4: None,
+            barrelshifter: None,
+            operand_count: 2,
+        };
+
+        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(16));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(16));
+
+        match converted {
+            Instructions::Cmp { ref op1, ref op2 } => cmp(&mut registers, op1, op2),
+            _ => panic!("Conversion ran wrong."),
+        }
+
+        assert!(!get_flag(&registers, "N"), "CMP #1 N flag is set.");
+        assert!(get_flag(&registers, "Z"), "CMP #1 Z flag is cleared.");
+        assert!(get_flag(&registers, "C"), "CMP #1 C flag is cleared.");
+        assert!(!get_flag(&registers, "V"), "CMP #1 V flag is set.");
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(17));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(16));
+
+        match converted {
+            Instructions::Cmp { ref op1, ref op2 } => cmp(&mut registers, op1, op2),
+            _ => panic!("Conversion ran wrong."),
+        }
+
+        assert!(!get_flag(&registers, "N"), "CMP #2 N flag is set.");
+        assert!(!get_flag(&registers, "Z"), "CMP #2 Z flag is set.");
+        assert!(get_flag(&registers, "C"), "CMP #2 C flag is cleared.");
+        assert!(!get_flag(&registers, "V"), "CMP #2 V flag is set.");
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(16));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(17));
+
+        match converted {
+            Instructions::Cmp { ref op1, ref op2 } => cmp(&mut registers, op1, op2),
+            _ => panic!("Conversion ran wrong."),
+        }
+
+        assert!(get_flag(&registers, "N"), "CMP #3 N flag is cleared.");
+        assert!(!get_flag(&registers, "Z"), "CMP #3 Z flag is set.");
+        assert!(!get_flag(&registers, "C"), "CMP #3 C flag is set.");
+        assert!(!get_flag(&registers, "V"), "CMP #3 V flag is set.");
+
+        set_register_value(
+            &mut registers,
+            "X0",
+            RegisterValue::Val64(9223372036854775809),
+        );
+        set_register_value(
+            &mut registers,
+            "X1",
+            RegisterValue::Val64(9223372036854775809),
+        );
+
+        match converted {
+            Instructions::Cmp { ref op1, ref op2 } => cmp(&mut registers, op1, op2),
+            _ => panic!("Conversion ran wrong."),
+        }
+
+        assert!(!get_flag(&registers, "N"), "CMP #4 N flag is set.");
+        assert!(get_flag(&registers, "Z"), "CMP #4 Z flag is cleared.");
+        assert!(get_flag(&registers, "C"), "CMP #4 C flag is cleared.");
+        assert!(get_flag(&registers, "V"), "CMP #4 V flag is cleared.");
+    }
 }

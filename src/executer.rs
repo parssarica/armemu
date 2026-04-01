@@ -154,6 +154,7 @@ pub fn execute(
                     fail(registers, &n);
                     exit(1);
                 }),
+            Instructions::Cmp { ref op1, ref op2 } => cmp(registers, op1, op2),
         }
 
         match ins_output {
