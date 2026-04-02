@@ -1,6 +1,8 @@
 MOV X0, #16
 MOV X1, #16
 CMP X0, X1
+BEQ label3
+label4:
 B label2
 label1:
 MOV X2, #10
@@ -12,3 +14,5 @@ label3:
 MOV X19, #314
 STR X19, [X19]
 LDR X16, [X19]
+CMP X0, X1
+BEQ label4

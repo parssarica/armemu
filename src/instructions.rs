@@ -50,6 +50,9 @@ pub enum Instructions {
     B {
         op1: Operand,
     },
+    Beq {
+        op1: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
@@ -111,6 +114,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             None,
         )?,
         "b" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
+        "beq" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
         _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
     }
 
@@ -194,6 +198,9 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             op2: ins.op2.as_ref().unwrap().clone(),
         },
         "b" => Instructions::B {
+            op1: ins.op1.as_ref().unwrap().clone(),
+        },
+        "beq" => Instructions::Beq {
             op1: ins.op1.as_ref().unwrap().clone(),
         },
         _ => unreachable!(),
@@ -547,4 +554,14 @@ pub fn b(registers: &mut Vec<Register>, op1: &Operand) {
     let new_place = op1.convert_reg_val(registers).unwrap();
 
     set_register_value(registers, "PC", new_place - RegisterValue::Val64(1));
+}
+
+pub fn beq(registers: &mut Vec<Register>, op1: &Operand) {
+    if get_flag(registers, "Z") {
+        set_register_value(
+            registers,
+            "PC",
+            op1.convert_reg_val(registers).unwrap() - RegisterValue::Val64(1),
+        );
+    }
 }
