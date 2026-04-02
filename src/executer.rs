@@ -159,6 +159,7 @@ pub fn execute(
             Instructions::Beq { ref op1 } => beq(registers, op1),
             Instructions::Bne { ref op1 } => bne(registers, op1),
             Instructions::Bgt { ref op1 } => bgt(registers, op1),
+            Instructions::Blt { ref op1 } => blt(registers, op1),
         }
 
         match ins_output {

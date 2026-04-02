@@ -18,7 +18,14 @@ LDR X16, [X19]
 CMP X0, X1
 BEQ label4
 label6:
-B label4
+MOV X0, #18
+MOV X1, #10
+CMP X0, X1
+BLT label4
+MOV X0, #10
+MOV X1, #18
+CMP X0, X1
+BLT label4
 label5:
 MOV X0, #16
 MOV X1, #16
