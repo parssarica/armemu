@@ -157,6 +157,7 @@ pub fn execute(
             Instructions::Cmp { ref op1, ref op2 } => cmp(registers, op1, op2),
             Instructions::B { ref op1 } => b(registers, op1),
             Instructions::Beq { ref op1 } => beq(registers, op1),
+            Instructions::Bne { ref op1 } => bne(registers, op1),
         }
 
         match ins_output {
