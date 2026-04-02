@@ -62,6 +62,9 @@ pub enum Instructions {
     Blt {
         op1: Operand,
     },
+    Bge {
+        op1: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
@@ -127,6 +130,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
         "bne" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
         "bgt" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
         "blt" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
+        "bge" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
         _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
     }
 
@@ -222,6 +226,9 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             op1: ins.op1.as_ref().unwrap().clone(),
         },
         "blt" => Instructions::Blt {
+            op1: ins.op1.as_ref().unwrap().clone(),
+        },
+        "bge" => Instructions::Bge {
             op1: ins.op1.as_ref().unwrap().clone(),
         },
         _ => unreachable!(),
@@ -609,6 +616,16 @@ pub fn bgt(registers: &mut Vec<Register>, op1: &Operand) {
 
 pub fn blt(registers: &mut Vec<Register>, op1: &Operand) {
     if get_flag(registers, "N") != get_flag(registers, "V") {
+        set_register_value(
+            registers,
+            "PC",
+            op1.convert_reg_val(registers).unwrap() - RegisterValue::Val64(1),
+        );
+    }
+}
+
+pub fn bge(registers: &mut Vec<Register>, op1: &Operand) {
+    if get_flag(registers, "N") == get_flag(registers, "V") {
         set_register_value(
             registers,
             "PC",

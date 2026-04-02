@@ -25,7 +25,7 @@ BLT label4
 MOV X0, #10
 MOV X1, #18
 CMP X0, X1
-BLT label4
+BLT label7
 label5:
 MOV X0, #16
 MOV X1, #16
@@ -39,3 +39,11 @@ MOV X0, #18
 MOV X1, #10
 CMP X0, X1
 BGT label6
+label7:
+MOV X0, #10
+MOV X1, #18
+CMP X0, X1
+BGE label4
+MOV X0, #18
+CMP X0, X1
+BGE label4
