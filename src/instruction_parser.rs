@@ -360,6 +360,7 @@ pub fn parse_labels(file: &str) -> Vec<(&str, u64)> {
     for line in file.lines() {
         if is_label(line.trim()) {
             labels.push((&line.trim()[..(line.len() - 1)], i));
+            continue;
         }
 
         i += 1;
