@@ -24,25 +24,30 @@ fn main() {
         }
     };
 
-    let mut memory: Vec<u8> = vec![0; parse_toml::parse_memory(&config.memory)];
+    let mut memory: Vec<u8> = vec![0; parse_toml::parse_memory(&config.config.memory)];
     let mut registers = registers::create_registers();
 
-    let Ok(file_utf8) = fs::read(&config.file) else {
-        fail_normal(&format!("Input file '{}' is invalid.", config.file));
+    let Ok(file_utf8) = fs::read(&config.config.file) else {
+        fail_normal(&format!("Input file '{}' is invalid.", config.config.file));
         exit(1);
     };
 
     let Ok(file) = String::from_utf8(file_utf8) else {
-        fail_normal(&format!("Input file '{}' is invalid.", config.file));
+        fail_normal(&format!("Input file '{}' is invalid.", config.config.file));
         exit(1);
     };
 
     let labels = instruction_parser::parse_labels(&file);
 
     let Some(mut code) = instruction_parser::parse_file(&registers, &file, &labels) else {
-        fail_normal(&format!("Input file '{}' is invalid.", config.file));
+        fail_normal(&format!("Input file '{}' is invalid.", config.config.file));
         exit(1);
     };
 
-    executer::execute(&mut code, &mut registers, &mut memory);
+    let debug_mode_on = match config.debugview {
+        Some(n) => n.debugmode,
+        None => true,
+    };
+
+    executer::execute(&mut code, &mut registers, &mut memory, debug_mode_on);
 }

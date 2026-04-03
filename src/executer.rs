@@ -25,6 +25,7 @@ pub fn execute(
     code: &mut Vec<Instruction>,
     registers: &mut Vec<Register>,
     mut memory: &mut Vec<u8>,
+    debug_mode_on: bool,
 ) {
     let ins_output: Result<(), String> = Ok(());
     let mut ins;
@@ -35,7 +36,9 @@ pub fn execute(
     let mut converted: Instructions;
 
     loop {
-        last_msg = debug_view(registers, code, &last_msg, &memory);
+        if debug_mode_on {
+            last_msg = debug_view(registers, code, &last_msg, &memory);
+        }
         register_barrel_shifter = None;
         old_val = None;
 
