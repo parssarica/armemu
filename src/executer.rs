@@ -161,7 +161,7 @@ pub fn execute(
             Instructions::Bgt { ref op1 } => bgt(registers, op1),
             Instructions::Blt { ref op1 } => blt(registers, op1),
             Instructions::Bge { ref op1 } => bge(registers, op1),
-            Instructions::Svc { .. } => svc(registers, &memory).unwrap_or_else(|n| {
+            Instructions::Svc { .. } => svc(registers, &mut memory).unwrap_or_else(|n| {
                 fail(registers, &n);
                 exit(1);
             }),

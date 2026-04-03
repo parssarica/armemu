@@ -676,10 +676,13 @@ pub fn bge(registers: &mut Vec<Register>, op1: &Operand) {
     }
 }
 
-pub fn svc(registers: &mut Vec<Register>, memory: &Vec<u8>) -> Result<(), String> {
-    let n = get_register_value(registers, "X8").unwrap();
+pub fn svc(registers: &mut Vec<Register>, memory: &mut Vec<u8>) -> Result<(), String> {
+    let n = get_register_value(registers, "X8").unwrap().convert_64();
     match n {
-        RegisterValue::Val64(64) => {
+        63 => {
+            sys_read(registers, memory);
+        }
+        64 => {
             sys_write(registers, memory);
         }
         _ => {
