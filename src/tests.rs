@@ -123,7 +123,7 @@ mod tests {
         let registers = create_registers();
         let line = "ADD X0, X1, X2, LSL #3";
 
-        let ins = parse_instruction(line, &registers).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
 
         assert_eq!(ins.name, "ADD", "Instruction 1 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 1 operand 1 not found.");
@@ -163,7 +163,7 @@ mod tests {
     fn parse_instruction_test2() {
         let registers = create_registers();
         let line = "SUBS X0, X1, X2, ASR #2";
-        let ins = parse_instruction(line, &registers).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
 
         assert_eq!(ins.name, "SUBS", "Instruction 2 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 2 operand 1 not found.");
@@ -203,7 +203,7 @@ mod tests {
     fn parse_instruction_test3() {
         let registers = create_registers();
         let line = "MOV X0, X1, X2, ASR #3";
-        let ins = parse_instruction(line, &registers).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
         assert_eq!(ins.name, "MOV", "Instruction 3 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 3 operand 1 not found.");
         assert!(ins.op2.is_some(), "Instruction 3 operand 2 not found.");
@@ -242,7 +242,7 @@ mod tests {
     fn parse_instruction_test4() {
         let registers = create_registers();
         let line = "ADD X0, X1, X2";
-        let ins = parse_instruction(line, &registers).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
 
         assert_eq!(ins.name, "ADD", "Instruction 4 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 4 operand 1 not found.");
@@ -259,7 +259,7 @@ mod tests {
     fn parse_instruction_test5() {
         let registers = create_registers();
         let line = "MOV X1, #10";
-        let ins = parse_instruction(line, &registers).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
 
         assert_eq!(ins.name, "MOV", "Instruction 5 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 5 operand 1 not found.");
@@ -276,7 +276,7 @@ mod tests {
     fn parse_instruction_test6() {
         let registers = create_registers();
         let line = "SUBS X1, X1, #1";
-        let ins = parse_instruction(line, &registers).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
 
         assert_eq!(ins.name, "SUBS", "Instruction 6 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 6 operand 1 not found.");
@@ -293,7 +293,7 @@ mod tests {
     fn parse_instruction_test7() {
         let registers = create_registers();
         let line = "BX X30";
-        let ins = parse_instruction(line, &registers).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
 
         assert_eq!(ins.name, "BX", "Instruction 7 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 7 operand 1 not found.");
@@ -338,7 +338,7 @@ mod tests {
             operand_count: 2,
         };
 
-        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Mov { ref op1, op2 } => mov(&mut registers, op1, op2),
             _ => panic!("convert_ins converted wrongly."),
@@ -366,7 +366,7 @@ mod tests {
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(2827));
 
-        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Add {
                 ref op1,
@@ -398,7 +398,7 @@ mod tests {
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(3455));
 
-        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Sub {
                 ref op1,
@@ -431,7 +431,7 @@ mod tests {
         set_register_value(&mut registers, "X1", RegisterValue::Val64(349));
         set_register_value(&mut registers, "X2", RegisterValue::Val64(9));
 
-        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Mul {
                 ref op1,
@@ -463,7 +463,7 @@ mod tests {
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(24));
 
-        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::And {
                 ref op1,
@@ -733,7 +733,7 @@ mod tests {
         set_register_value(&mut registers, "X0", RegisterValue::Val64(314));
         set_register_value(&mut registers, "X1", RegisterValue::Val64(512));
 
-        let converted = convert_ins(&ins1).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins1, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Str { ref op1, op2 } => str(&mut registers, op1, op2, &mut memory)
                 .expect("Instruction failed for no reason."),
@@ -751,7 +751,7 @@ mod tests {
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(256));
 
-        let converted = convert_ins(&ins2).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins2, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Str { ref op1, op2 } => str(&mut registers, op1, op2, &mut memory)
                 .expect("Instruction failed for no reason."),
@@ -828,14 +828,14 @@ mod tests {
 
         set_register_value(&mut registers, "X0", RegisterValue::Val64(314));
         set_register_value(&mut registers, "X1", RegisterValue::Val64(512));
-        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Str { ref op1, op2 } => str(&mut registers, op1, op2, &mut memory)
                 .expect("Instruction failed for no reason."),
             _ => panic!("convert_ins converted wrongly."),
         }
 
-        let converted = convert_ins(&ins2).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins2, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Ldr { ref op1, ref op2 } => {
                 ldr(&mut registers, op1, op2, &memory).expect("Instruction failed for no reason.")
@@ -848,14 +848,14 @@ mod tests {
         assert_eq!(value, RegisterValue::Val64(314), "Value #1 didn't match.");
 
         set_register_value(&mut registers, "X1", RegisterValue::Val64(256));
-        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Str { ref op1, op2 } => str(&mut registers, op1, op2, &mut memory)
                 .expect("Instruction failed for no reason."),
             _ => panic!("convert_ins converted wrongly."),
         }
 
-        let converted = convert_ins(&ins2).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins2, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Ldr { ref op1, ref op2 } => {
                 ldr(&mut registers, op1, op2, &memory).expect("Instruction failed for no reason.")
@@ -873,7 +873,7 @@ mod tests {
             "Post indexing didn't work."
         );
 
-        let converted = convert_ins(&ins3).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins3, &registers).expect("Conversion failed for no reason.");
         match converted {
             Instructions::Ldr { ref op1, ref op2 } => {
                 ldr(&mut registers, op1, op2, &memory).expect("Instruction failed for no reason.")
@@ -898,7 +898,7 @@ mod tests {
             operand_count: 2,
         };
 
-        let converted = convert_ins(&ins).expect("Conversion failed for no reason.");
+        let converted = convert_ins(&ins, &registers).expect("Conversion failed for no reason.");
 
         set_register_value(&mut registers, "X0", RegisterValue::Val64(16));
         set_register_value(&mut registers, "X1", RegisterValue::Val64(16));
@@ -959,5 +959,291 @@ mod tests {
         assert!(get_flag(&registers, "Z"), "CMP #4 Z flag is cleared.");
         assert!(get_flag(&registers, "C"), "CMP #4 C flag is cleared.");
         assert!(get_flag(&registers, "V"), "CMP #4 V flag is cleared.");
+    }
+
+    #[test]
+    fn b_test() {
+        let mut registers = create_registers();
+
+        b(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(9),
+            "Branch #1 didn't work."
+        );
+        b(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(50)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #2 didn't work."
+        );
+        b(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(0),
+            "Branch #3 didn't work."
+        );
+        b(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(19),
+            "Branch #4 didn't work."
+        );
+    }
+
+    #[test]
+    fn beq_test() {
+        let mut registers = create_registers();
+
+        beq(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(0),
+            "Branch #1 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", true);
+        beq(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(50)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #2 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", false);
+        beq(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #3 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", true);
+        beq(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(19),
+            "Branch #4 didn't work."
+        );
+    }
+
+    #[test]
+    fn bne_test() {
+        let mut registers = create_registers();
+
+        set_flag(&mut registers, "Z", true);
+        bne(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(0),
+            "Branch #1 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", false);
+        bne(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(50)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #2 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", true);
+        bne(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #3 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", false);
+        bne(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(19),
+            "Branch #4 didn't work."
+        );
+    }
+
+    #[test]
+    fn bgt_test() {
+        let mut registers = create_registers();
+
+        set_flag(&mut registers, "Z", true);
+        bgt(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(0),
+            "Branch #1 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", false);
+        bgt(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(50)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #2 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", true);
+        bgt(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #3 didn't work."
+        );
+
+        set_flag(&mut registers, "Z", false);
+        bgt(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(19),
+            "Branch #4 didn't work."
+        );
+    }
+
+    #[test]
+    fn blt_test() {
+        let mut registers = create_registers();
+
+        set_flag(&mut registers, "N", false);
+        blt(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(0),
+            "Branch #1 didn't work."
+        );
+
+        set_flag(&mut registers, "N", true);
+        blt(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(50)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #2 didn't work."
+        );
+
+        set_flag(&mut registers, "N", false);
+        blt(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #3 didn't work."
+        );
+
+        set_flag(&mut registers, "N", true);
+        blt(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(19),
+            "Branch #4 didn't work."
+        );
+    }
+
+    #[test]
+    fn bge_test() {
+        let mut registers = create_registers();
+
+        set_flag(&mut registers, "N", true);
+        bge(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(0),
+            "Branch #1 didn't work."
+        );
+
+        set_flag(&mut registers, "N", false);
+        bge(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(50)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #2 didn't work."
+        );
+
+        set_flag(&mut registers, "N", true);
+        bge(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(49),
+            "Branch #3 didn't work."
+        );
+
+        set_flag(&mut registers, "N", false);
+        bge(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+        assert_eq!(
+            get_register_value(&registers, "PC").unwrap(),
+            RegisterValue::Val64(19),
+            "Branch #4 didn't work."
+        );
     }
 }

@@ -1,5 +1,8 @@
+use crate::errormsg::*;
 use crate::instruction_parser::*;
 use crate::registers::*;
+use crate::syscalls::*;
+use std::process::exit;
 
 pub enum OperandType {
     Register,
@@ -65,9 +68,12 @@ pub enum Instructions {
     Bge {
         op1: Operand,
     },
+    Svc {
+        op1: Operand,
+    },
 }
 
-pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
+pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
     match ins.name.to_lowercase().as_str() {
         "mov" => operand_check(
             ins,
@@ -75,6 +81,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             Some(OperandType::RegImm),
             None,
             None,
+            registers,
         )?,
         "add" => operand_check(
             ins,
@@ -82,6 +89,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             Some(OperandType::Register),
             Some(OperandType::RegImm),
             None,
+            registers,
         )?,
         "sub" => operand_check(
             ins,
@@ -89,6 +97,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             Some(OperandType::Register),
             Some(OperandType::RegImm),
             None,
+            registers,
         )?,
         "mul" => operand_check(
             ins,
@@ -96,6 +105,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             Some(OperandType::Register),
             Some(OperandType::RegImm),
             None,
+            registers,
         )?,
         "and" => operand_check(
             ins,
@@ -103,6 +113,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             Some(OperandType::Register),
             Some(OperandType::RegImm),
             None,
+            registers,
         )?,
         "ldr" => operand_check(
             ins,
@@ -110,6 +121,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             Some(OperandType::MemoryAddress),
             None,
             None,
+            registers,
         )?,
         "str" => operand_check(
             ins,
@@ -117,6 +129,7 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             Some(OperandType::MemoryAddress),
             None,
             None,
+            registers,
         )?,
         "cmp" => operand_check(
             ins,
@@ -124,13 +137,22 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
             Some(OperandType::RegImm),
             None,
             None,
+            registers,
         )?,
-        "b" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
-        "beq" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
-        "bne" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
-        "bgt" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
-        "blt" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
-        "bge" => operand_check(ins, Some(OperandType::RegImm), None, None, None)?,
+        "b" => operand_check(ins, Some(OperandType::RegImm), None, None, None, registers)?,
+        "beq" => operand_check(ins, Some(OperandType::RegImm), None, None, None, registers)?,
+        "bne" => operand_check(ins, Some(OperandType::RegImm), None, None, None, registers)?,
+        "bgt" => operand_check(ins, Some(OperandType::RegImm), None, None, None, registers)?,
+        "blt" => operand_check(ins, Some(OperandType::RegImm), None, None, None, registers)?,
+        "bge" => operand_check(ins, Some(OperandType::RegImm), None, None, None, registers)?,
+        "svc" => operand_check(
+            ins,
+            Some(OperandType::Immediate),
+            None,
+            None,
+            None,
+            registers,
+        )?,
         _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
     }
 
@@ -231,6 +253,9 @@ pub fn convert_ins(ins: &Instruction) -> Result<Instructions, String> {
         "bge" => Instructions::Bge {
             op1: ins.op1.as_ref().unwrap().clone(),
         },
+        "svc" => Instructions::Svc {
+            op1: ins.op1.as_ref().unwrap().clone(),
+        },
         _ => unreachable!(),
     })
 }
@@ -265,6 +290,7 @@ pub fn operand_check(
     op2_type: Option<OperandType>,
     op3_type: Option<OperandType>,
     op4_type: Option<OperandType>,
+    registers: &Vec<Register>,
 ) -> Result<(), String> {
     let mut operand_count = 0;
     operand_count += match op1_type {
@@ -293,11 +319,15 @@ pub fn operand_check(
 
     if operand_count > 0 {
         match instruction.op1.as_ref().unwrap() {
-            Operand::OperandRegister(_) => match op1_type.unwrap() {
+            Operand::OperandRegister(n) => match op1_type.unwrap() {
                 OperandType::Immediate | OperandType::MemoryAddress => {
                     return Err("Invalid type in operand 1".to_string())
                 }
-                _ => (),
+                _ => {
+                    if get_register_value(registers, n).is_none() {
+                        return Err("Invalid register in operand 1".to_string());
+                    }
+                }
             },
             Operand::OperandNumber(_) => match op1_type.unwrap() {
                 OperandType::Register | OperandType::MemoryAddress => {
@@ -316,11 +346,15 @@ pub fn operand_check(
 
     if operand_count > 1 {
         match instruction.op2.as_ref().unwrap() {
-            Operand::OperandRegister(_) => match op2_type.unwrap() {
+            Operand::OperandRegister(n) => match op2_type.unwrap() {
                 OperandType::Immediate | OperandType::MemoryAddress => {
                     return Err("Invalid type in operand 2".to_string())
                 }
-                _ => (),
+                _ => {
+                    if get_register_value(registers, n).is_none() {
+                        return Err("Invalid register in operand 2".to_string());
+                    }
+                }
             },
             Operand::OperandNumber(_) => match op2_type.unwrap() {
                 OperandType::Register | OperandType::MemoryAddress => {
@@ -339,11 +373,15 @@ pub fn operand_check(
 
     if operand_count > 2 {
         match instruction.op3.as_ref().unwrap() {
-            Operand::OperandRegister(_) => match op3_type.unwrap() {
+            Operand::OperandRegister(n) => match op3_type.unwrap() {
                 OperandType::Immediate | OperandType::MemoryAddress => {
                     return Err("Invalid type in operand 3".to_string())
                 }
-                _ => (),
+                _ => {
+                    if get_register_value(registers, n).is_none() {
+                        return Err("Invalid register in operand 3".to_string());
+                    }
+                }
             },
             Operand::OperandNumber(_) => match op3_type.unwrap() {
                 OperandType::Register | OperandType::MemoryAddress => {
@@ -362,11 +400,15 @@ pub fn operand_check(
 
     if operand_count > 3 {
         match instruction.op4.as_ref().unwrap() {
-            Operand::OperandRegister(_) => match op4_type.unwrap() {
+            Operand::OperandRegister(n) => match op4_type.unwrap() {
                 OperandType::Immediate | OperandType::MemoryAddress => {
                     return Err("Invalid type in operand 4".to_string())
                 }
-                _ => (),
+                _ => {
+                    if get_register_value(registers, n).is_none() {
+                        return Err("Invalid register in operand 4".to_string());
+                    }
+                }
             },
             Operand::OperandNumber(_) => match op4_type.unwrap() {
                 OperandType::Register | OperandType::MemoryAddress => {
@@ -632,4 +674,22 @@ pub fn bge(registers: &mut Vec<Register>, op1: &Operand) {
             op1.convert_reg_val(registers).unwrap() - RegisterValue::Val64(1),
         );
     }
+}
+
+pub fn svc(registers: &mut Vec<Register>, memory: &Vec<u8>) -> Result<(), String> {
+    let n = get_register_value(registers, "X8").unwrap();
+    match n {
+        RegisterValue::Val64(64) => {
+            sys_write(registers, memory);
+        }
+        _ => {
+            fail(
+                registers,
+                &format!("Syscall #{} hasn't implemented yet.", n),
+            );
+            exit(1);
+        }
+    }
+
+    Ok(())
 }

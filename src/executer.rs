@@ -117,7 +117,7 @@ pub fn execute(
             ins.op2 = new_op.clone();
         }
 
-        converted = convert_ins(&ins).unwrap_or_else(|n| {
+        converted = convert_ins(&ins, &registers).unwrap_or_else(|n| {
             fail(registers, &format!("{}", n));
             exit(1);
         });
@@ -161,6 +161,10 @@ pub fn execute(
             Instructions::Bgt { ref op1 } => bgt(registers, op1),
             Instructions::Blt { ref op1 } => blt(registers, op1),
             Instructions::Bge { ref op1 } => bge(registers, op1),
+            Instructions::Svc { .. } => svc(registers, &memory).unwrap_or_else(|n| {
+                fail(registers, &n);
+                exit(1);
+            }),
         }
 
         match ins_output {

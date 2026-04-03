@@ -5,6 +5,7 @@ pub mod instruction_parser;
 pub mod instructions;
 mod parse_toml;
 pub mod registers;
+pub mod syscalls;
 mod tests;
 
 use errormsg::*;
