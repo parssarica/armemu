@@ -685,6 +685,9 @@ pub fn svc(registers: &mut Vec<Register>, memory: &mut Vec<u8>) -> Result<(), St
         64 => {
             sys_write(registers, memory);
         }
+        93 => {
+            sys_exit(registers);
+        }
         _ => {
             fail(
                 registers,
