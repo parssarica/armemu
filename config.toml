@@ -1,5 +1,5 @@
 [config]
-file = "asmfiles/assembly05.asm"
+file = "asmfiles/assembly06.asm"
 memory = "10MB"
 
 [debugview]

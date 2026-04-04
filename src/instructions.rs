@@ -71,6 +71,11 @@ pub enum Instructions {
     Svc {
         op1: Operand,
     },
+    Adds {
+        op1: String,
+        op2: String,
+        op3: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -150,6 +155,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             Some(OperandType::Immediate),
             None,
             None,
+            None,
+            registers,
+        )?,
+        "adds" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
             None,
             registers,
         )?,
@@ -255,6 +268,17 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
         },
         "svc" => Instructions::Svc {
             op1: ins.op1.as_ref().unwrap().clone(),
+        },
+        "adds" => Instructions::Adds {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: match ins.op2.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op3: ins.op3.as_ref().unwrap().clone(),
         },
         _ => unreachable!(),
     })
@@ -590,7 +614,6 @@ pub fn str(
 pub fn cmp(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
     let op1_val = get_register_value(registers, op1).unwrap().convert_64() as i64;
     let op2_val = op2.convert_reg_val(registers).unwrap().convert_64() as i64;
-
     let subtraction = op1_val - op2_val;
 
     if subtraction < 0 {
@@ -698,4 +721,50 @@ pub fn svc(registers: &mut Vec<Register>, memory: &mut Vec<u8>) -> Result<(), St
     }
 
     Ok(())
+}
+
+pub fn adds(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) {
+    let val1 = get_register_value(registers, op2).unwrap().convert_64() as u64;
+    let val2 = op3.convert_reg_val(registers).unwrap().convert_64() as u64;
+    let bits = if op1.chars().nth(0).unwrap() == 'W' {
+        32
+    } else {
+        64
+    };
+    let mask: u64 = if bits == 32 {
+        4294967295
+    } else {
+        18446744073709551615
+    };
+    let res;
+    add(registers, op1, op2, op3.clone());
+
+    res = get_register_value(registers, op1).unwrap().convert_64() as u64;
+
+    set_flag(
+        registers,
+        "N",
+        match res & (1 << (bits - 1)) {
+            1 => true,
+            _ => false,
+        },
+    );
+
+    set_flag(
+        registers,
+        "Z",
+        match res & mask {
+            0 => true,
+            _ => false,
+        },
+    );
+
+    set_flag(registers, "C", res > mask);
+
+    set_flag(
+        registers,
+        "V",
+        (((val1 >> (bits - 1)) & 1) == ((val2 >> (bits - 1)) & 1))
+            && (((val1 >> (bits - 1)) & 1) != (((res & mask) >> (bits - 1)) & 1)),
+    );
 }

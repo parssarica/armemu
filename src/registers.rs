@@ -21,7 +21,7 @@ impl Add for RegisterValue {
             Self::Val64(n) => n,
         };
 
-        RegisterValue::Val64(val1 + val2)
+        RegisterValue::Val64(val1.wrapping_add(val2))
     }
 }
 
@@ -39,14 +39,7 @@ impl Sub for RegisterValue {
             Self::Val64(n) => n,
         };
 
-        let res;
-        if val2 > val1 {
-            res = RegisterValue::Val64(18446744073709551615 - val2 + val1);
-        } else {
-            res = RegisterValue::Val64(val1 - val2);
-        }
-
-        res
+        RegisterValue::Val64(val1.wrapping_sub(val2))
     }
 }
 
@@ -64,7 +57,7 @@ impl Mul for RegisterValue {
             Self::Val64(n) => n,
         };
 
-        RegisterValue::Val64(val1 * val2)
+        RegisterValue::Val64(val1.wrapping_mul(val2))
     }
 }
 
