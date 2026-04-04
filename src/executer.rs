@@ -173,6 +173,11 @@ pub fn execute(
                 ref op2,
                 ref op3,
             } => adds(registers, op1, op2, op3),
+            Instructions::Subs {
+                ref op1,
+                ref op2,
+                ref op3,
+            } => subs(registers, op1, op2, op3),
         }
 
         match ins_output {

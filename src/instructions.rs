@@ -76,6 +76,11 @@ pub enum Instructions {
         op2: String,
         op3: Operand,
     },
+    Subs {
+        op1: String,
+        op2: String,
+        op3: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -159,6 +164,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             registers,
         )?,
         "adds" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
+            None,
+            registers,
+        )?,
+        "subs" => operand_check(
             ins,
             Some(OperandType::Register),
             Some(OperandType::Register),
@@ -270,6 +283,17 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             op1: ins.op1.as_ref().unwrap().clone(),
         },
         "adds" => Instructions::Adds {
+            op1: match ins.op1.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op2: match ins.op2.as_ref().unwrap() {
+                Operand::OperandRegister(n) => n.to_string(),
+                _ => unreachable!(),
+            },
+            op3: ins.op3.as_ref().unwrap().clone(),
+        },
+        "subs" => Instructions::Subs {
             op1: match ins.op1.as_ref().unwrap() {
                 Operand::OperandRegister(n) => n.to_string(),
                 _ => unreachable!(),
@@ -767,4 +791,39 @@ pub fn adds(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) 
         (((val1 >> (bits - 1)) & 1) == ((val2 >> (bits - 1)) & 1))
             && (((val1 >> (bits - 1)) & 1) != (((res & mask) >> (bits - 1)) & 1)),
     );
+}
+
+pub fn subs(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) {
+    let val1 = get_register_value(registers, op2).unwrap().convert_64() as i64;
+    let val2 = op3.convert_reg_val(registers).unwrap().convert_64() as i64;
+    let subtraction;
+    sub(registers, op1, op2, op3.clone());
+
+    subtraction = get_register_value(registers, op1).unwrap().convert_64() as i64;
+
+    if subtraction < 0 {
+        set_flag(registers, "N", true);
+    } else {
+        set_flag(registers, "N", false);
+    }
+
+    if subtraction == 0 {
+        set_flag(registers, "Z", true);
+    } else {
+        set_flag(registers, "Z", false);
+    }
+
+    if val1 >= val2 {
+        set_flag(registers, "C", true);
+    } else {
+        set_flag(registers, "C", false);
+    }
+
+    if (val1 > 0 && val2 > 0 && (val1.wrapping_add(val2)) < 0)
+        || (val1 < 0 && val2 < 0 && (val1.wrapping_add(val2)) > 0)
+    {
+        set_flag(registers, "V", true);
+    } else {
+        set_flag(registers, "V", false);
+    }
 }
