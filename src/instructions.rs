@@ -10,6 +10,7 @@ pub enum OperandType {
     MemoryAddress,
     RegImm,
     RegMem,
+    ImmMem,
     Triple,
 }
 
@@ -40,7 +41,7 @@ pub enum Instructions {
     },
     Ldr {
         op1: String,
-        op2: MemoryAddress,
+        op2: Operand,
     },
     Str {
         op1: String,
@@ -128,7 +129,7 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
         "ldr" => operand_check(
             ins,
             Some(OperandType::Register),
-            Some(OperandType::MemoryAddress),
+            Some(OperandType::ImmMem),
             None,
             None,
             registers,
@@ -239,10 +240,7 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 Operand::OperandRegister(n) => n.to_string(),
                 _ => unreachable!(),
             },
-            op2: match ins.op2.as_ref().unwrap() {
-                Operand::OperandAddress(n) => n.clone(),
-                _ => unreachable!(),
-            },
+            op2: ins.op2.as_ref().unwrap().clone(),
         },
         "str" => Instructions::Str {
             op1: match ins.op1.as_ref().unwrap() {
@@ -521,24 +519,22 @@ pub fn and(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: Operand) {
 pub fn ldr(
     registers: &mut Vec<Register>,
     op1: &str,
-    op2: &MemoryAddress,
+    op2: &Operand,
     memory: &Vec<u8>,
 ) -> Result<(), String> {
-    op2.change_reg_preindex(registers);
-
-    match op2.addr_type {
-        MemoryAddressType::SetRegister => {
-            set_register_value(
-                registers,
-                op1,
-                op2.second_val.as_ref().unwrap().get_val(registers).unwrap(),
-            );
+    let mem_addr_obj = match op2 {
+        Operand::OperandAddress(n) => {
+            n.change_reg_preindex(registers);
+            n
+        }
+        Operand::OperandNumber(n) => {
+            set_register_value(registers, op1, *n);
             return Ok(());
         }
-        _ => (),
-    }
+        _ => unreachable!(),
+    };
 
-    let addr = op2.get_addr(registers).convert_64();
+    let addr = mem_addr_obj.get_addr(registers).convert_64();
     let mut bytes = Vec::new();
     let is_32_bit = match op1.chars().nth(0).unwrap() {
         'W' => true,
@@ -597,7 +593,7 @@ pub fn ldr(
         );
     }
 
-    op2.change_reg_postindex(registers);
+    mem_addr_obj.change_reg_postindex(registers);
 
     Ok(())
 }

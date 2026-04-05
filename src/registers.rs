@@ -226,7 +226,7 @@ pub fn get_register<'a>(registers: &'a Vec<Register>, name: &'a str) -> Option<&
     }
 
     for i in registers {
-        if i.name == name {
+        if i.name == name.to_uppercase() {
             return Some(i);
         }
     }
@@ -240,7 +240,7 @@ pub fn get_register_value(registers: &Vec<Register>, name: &str) -> Option<Regis
     }
 
     for i in registers {
-        if i.name == name {
+        if i.name == name.to_uppercase() {
             return Some(i.value);
         }
     }
@@ -253,7 +253,7 @@ pub fn set_register_value(registers: &mut Vec<Register>, name: &str, value: Regi
         return;
     }
 
-    let mut reg_name = String::from(name);
+    let mut reg_name = String::from(name.to_uppercase());
     let is_32_bit = reg_name.chars().nth(0).unwrap() == 'W';
 
     for i in registers.iter_mut() {

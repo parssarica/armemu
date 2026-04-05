@@ -9,7 +9,8 @@ pub struct ConfigToml {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub file: String,
+    pub code: Option<String>,
+    pub binary: Option<String>,
     pub memory: String,
 }
 

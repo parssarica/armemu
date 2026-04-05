@@ -39,6 +39,7 @@ pub fn debug_view(
     instructions: &Vec<Instruction>,
     last_msg: &str,
     memory: &Vec<u8>,
+    addr: usize,
 ) -> String {
     let pc = match get_register_value(registers, "PC") {
         Some(RegisterValue::Val64(n)) => n,
@@ -46,12 +47,12 @@ pub fn debug_view(
     };
     clear_screen();
     print_msg(" - INSTRUCTIONS - ");
-    let ins1 = match instructions.get(pc as usize) {
+    let ins1 = match instructions.get((pc as usize) - addr) {
         Some(n) => n,
         None => return String::new(),
     };
-    let ins2 = instructions.get((pc + 1) as usize);
-    let ins3 = instructions.get((pc + 2) as usize);
+    let ins2 = instructions.get(((pc + 1) as usize) - addr);
+    let ins3 = instructions.get(((pc + 2) as usize) - addr);
     let mut i = 0;
     let mut input;
     let mut ins_to_print = vec![ins1];
@@ -71,7 +72,7 @@ pub fn debug_view(
     }
 
     for ins in &ins_to_print {
-        print!("{:#X}: \x1b[31m{}\x1b[0m", pc + i, ins.name);
+        print!("{:#X}: \x1b[31m{}\x1b[0m", pc + i, ins.name.to_uppercase());
         match &ins.op1 {
             Some(n) => print!(" {}", n),
             None => (),
