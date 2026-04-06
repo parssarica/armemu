@@ -181,7 +181,13 @@ pub fn execute_normal(
 
     loop {
         if debug_mode_on {
-            last_msg = debug_view(registers, code, &last_msg, &memory, 0);
+            last_msg = debug_view_normal(
+                registers,
+                &code[(get_register_value(registers, "PC").unwrap().convert_64() as usize)..],
+                &last_msg,
+                &memory,
+                0,
+            );
         }
         ins = code
             .get_mut(
@@ -230,10 +236,18 @@ pub fn execute_disasm(
     let mut disassembled_multi;
 
     loop {
-        if debug_mode_on {
-            // last_msg = debug_view(registers, code, &last_msg, &memory, addr);
-        }
         pc = get_register_value(registers, "PC").unwrap().convert_64() as usize - entry_point;
+        if debug_mode_on {
+            last_msg = debug_view_disasm(
+                registers,
+                &file[pc..(pc + 12)],
+                &last_msg,
+                &memory,
+                entry_point,
+                cs,
+                pc as u64,
+            );
+        }
 
         if pc + 4 >= file.len() {
             fail_normal("No instruction or syscall to end the program");

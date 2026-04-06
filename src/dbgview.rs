@@ -36,7 +36,7 @@ fn add_space(reg_name: &str) -> String {
 
 pub fn debug_view(
     registers: &mut Vec<Register>,
-    instructions: &Vec<Instruction>,
+    instructions: &[Instruction],
     last_msg: &str,
     memory: &Vec<u8>,
     addr: usize,
@@ -47,15 +47,8 @@ pub fn debug_view(
     };
     clear_screen();
     print_msg(" - INSTRUCTIONS - ");
-    let ins1 = match instructions.get((pc as usize) - addr) {
-        Some(n) => n,
-        None => return String::new(),
-    };
-    let ins2 = instructions.get(((pc + 1) as usize) - addr);
-    let ins3 = instructions.get(((pc + 2) as usize) - addr);
     let mut i = 0;
     let mut input;
-    let mut ins_to_print = vec![ins1];
     let mut trimmed_input;
     let mut parts: Vec<&str>;
     let mut address;
@@ -63,15 +56,11 @@ pub fn debug_view(
     let mut j;
     let mut k;
 
-    if ins2.is_some() {
-        ins_to_print.push(ins2.unwrap());
-    }
-
-    if ins3.is_some() {
-        ins_to_print.push(ins3.unwrap());
-    }
-
-    for ins in &ins_to_print {
+    for ins in &instructions[..(if instructions.len() >= 3 {
+        3
+    } else {
+        instructions.len()
+    })] {
         print!("{:#X}: \x1b[31m{}\x1b[0m", pc + i, ins.name.to_uppercase());
         match &ins.op1 {
             Some(n) => print!(" {}", n),
@@ -274,4 +263,40 @@ pub fn debug_view(
     }
 
     input
+}
+
+pub fn debug_view_normal(
+    registers: &mut Vec<Register>,
+    instructions: &[Instruction],
+    last_msg: &str,
+    memory: &Vec<u8>,
+    addr: usize,
+) -> String {
+    debug_view(registers, instructions, last_msg, memory, addr)
+}
+
+pub fn debug_view_disasm(
+    registers: &mut Vec<Register>,
+    instructions: &[u8],
+    last_msg: &str,
+    memory: &Vec<u8>,
+    addr: usize,
+    cs: &capstone::Capstone,
+    pc: u64,
+) -> String {
+    let disassembled = cs.disasm_all(instructions, pc).unwrap_or_else(|_| {
+        fail_normal(&format!("Invalid bytes at {:#08X}", pc));
+        exit(1);
+    });
+    let mut instructions: Vec<Instruction> = Vec::new();
+
+    for i in disassembled.as_ref() {
+        let mut ins = i.mnemonic().unwrap().to_string();
+        if let Some(n) = i.op_str() {
+            ins.push_str(&format!(" {}", n));
+        }
+        instructions.push(parse_instruction(&ins, registers, &Vec::<(&str, u64)>::new()).unwrap());
+    }
+
+    debug_view(registers, &instructions, last_msg, memory, addr)
 }

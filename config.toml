@@ -1,5 +1,5 @@
 [config]
-binary = "binaries/hello"
+code = "asmfiles/assembly06.asm"
 memory = "10MB"
 
 [debugview]
