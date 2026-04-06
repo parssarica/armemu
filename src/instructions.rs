@@ -528,7 +528,11 @@ pub fn ldr(
             n
         }
         Operand::OperandNumber(n) => {
-            set_register_value(registers, op1, *n);
+            set_register_value(
+                registers,
+                op1,
+                get_register_value(registers, "PC").unwrap() + RegisterValue::Val64(4) + *n,
+            );
             return Ok(());
         }
         _ => unreachable!(),
