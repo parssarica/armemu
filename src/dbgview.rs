@@ -39,7 +39,6 @@ pub fn debug_view(
     instructions: &[Instruction],
     last_msg: &str,
     memory: &Vec<u8>,
-    addr: usize,
 ) -> String {
     let pc = match get_register_value(registers, "PC") {
         Some(RegisterValue::Val64(n)) => n,
@@ -56,12 +55,20 @@ pub fn debug_view(
     let mut j;
     let mut k;
 
-    for ins in &instructions[..(if instructions.len() >= 3 {
-        3
-    } else {
-        instructions.len()
-    })] {
-        print!("{:#X}: \x1b[31m{}\x1b[0m", pc + i, ins.name.to_uppercase());
+    for ins in instructions {
+        if ins.name.eq_ignore_ascii_case("morethanonebyte") {
+            continue;
+        }
+
+        if i == 3 {
+            break;
+        }
+
+        print!(
+            "{:#X}: \x1b[31m{}\x1b[0m",
+            pc + i * 4,
+            ins.name.to_uppercase()
+        );
         match &ins.op1 {
             Some(n) => print!(" {}", n),
             None => (),
@@ -270,9 +277,13 @@ pub fn debug_view_normal(
     instructions: &[Instruction],
     last_msg: &str,
     memory: &Vec<u8>,
-    addr: usize,
 ) -> String {
-    debug_view(registers, instructions, last_msg, memory, addr)
+    let x: Vec<Instruction> = instructions
+        .iter()
+        .filter(|x| x.name != "morethanonebyte")
+        .cloned()
+        .collect();
+    debug_view(registers, &x, last_msg, memory)
 }
 
 pub fn debug_view_disasm(
@@ -280,14 +291,18 @@ pub fn debug_view_disasm(
     instructions: &[u8],
     last_msg: &str,
     memory: &Vec<u8>,
-    addr: usize,
     cs: &capstone::Capstone,
-    pc: u64,
+    disasm_point: u64,
 ) -> String {
-    let disassembled = cs.disasm_all(instructions, pc).unwrap_or_else(|_| {
-        fail_normal(&format!("Invalid bytes at {:#08X}", pc));
-        exit(1);
-    });
+    let disassembled = cs
+        .disasm_all(instructions, disasm_point)
+        .unwrap_or_else(|_| {
+            fail_normal(&format!(
+                "Invalid bytes at {:#08X}",
+                get_register_value(registers, "PC").unwrap().convert_64()
+            ));
+            exit(1);
+        });
     let mut instructions: Vec<Instruction> = Vec::new();
 
     for i in disassembled.as_ref() {
@@ -295,8 +310,9 @@ pub fn debug_view_disasm(
         if let Some(n) = i.op_str() {
             ins.push_str(&format!(" {}", n));
         }
-        instructions.push(parse_instruction(&ins, registers, &Vec::<(&str, u64)>::new()).unwrap());
+        instructions
+            .push(parse_instruction(&ins, registers, &Vec::<(&str, u64)>::new(), 0).unwrap());
     }
 
-    debug_view(registers, &instructions, last_msg, memory, addr)
+    debug_view(registers, &instructions, last_msg, memory)
 }

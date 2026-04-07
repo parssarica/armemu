@@ -47,6 +47,7 @@ pub enum Operand {
     OperandAddress(MemoryAddress),
 }
 
+#[derive(Clone)]
 pub struct Instruction {
     pub name: String,
     pub op1: Option<Operand>,
@@ -609,8 +610,9 @@ pub fn parse_instruction(
     line: &str,
     registers: &Vec<Register>,
     labels: &Vec<(&str, u64)>,
+    ins_id: u64,
 ) -> Option<Instruction> {
-    let mut i = 0;
+    let mut i: u64 = 0;
     let mut trimmed_parts: Vec<&str>;
     let mut operand: Option<Operand>;
     let mut parts: Vec<String>;
@@ -652,7 +654,9 @@ pub fn parse_instruction(
                         None => match parse_memory_address(registers, part) {
                             Some(k) => Some(k),
                             None => match labels.iter().find(|&&x| x.0 == part) {
-                                Some(k) => Some(Operand::OperandNumber(RegisterValue::Val64(k.1))),
+                                Some(k) => Some(Operand::OperandNumber(RegisterValue::Val64(
+                                    ((k.1).wrapping_sub(ins_id)) as u64,
+                                ))),
                                 None => None,
                             },
                         },
@@ -728,14 +732,27 @@ pub fn parse_file(
 ) -> Option<Vec<Instruction>> {
     let mut ins: Instruction;
     let mut code = Vec::new();
+    let mut i = 0;
 
     for line in file.lines() {
         if is_label(line) {
             continue;
         }
 
-        ins = parse_instruction(line, registers, labels)?;
+        ins = parse_instruction(line, registers, labels, i)?;
         code.push(ins);
+        for _ in 0..3 {
+            code.push(Instruction {
+                name: "morethanonebyte".to_string(),
+                op1: None,
+                op2: None,
+                op3: None,
+                op4: None,
+                barrelshifter: None,
+                operand_count: 0,
+            });
+        }
+        i += 1;
     }
 
     Some(code)

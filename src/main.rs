@@ -107,7 +107,10 @@ fn main() {
     };
 
     let labels = match config.config.code {
-        Some(ref n) => instruction_parser::parse_labels(n),
+        Some(_) => instruction_parser::parse_labels(str::from_utf8(&file).unwrap_or_else(|_| {
+            fail_normal("File contains non UTF-8 characters.");
+            exit(1);
+        })),
         None => Vec::new(),
     };
 

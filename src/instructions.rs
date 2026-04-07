@@ -15,6 +15,7 @@ pub enum OperandType {
 }
 
 pub enum Instructions {
+    MoreThanOneByte,
     Mov {
         op1: String,
         op2: Operand,
@@ -85,7 +86,7 @@ pub enum Instructions {
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
-    match ins.name.to_lowercase().as_str() {
+    match ins.name.to_lowercase().replace(".", "").as_str() {
         "mov" => operand_check(
             ins,
             Some(OperandType::Register),
@@ -183,127 +184,130 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
         _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
     }
 
-    Ok(match ins.name.to_lowercase().as_str() {
-        "mov" => Instructions::Mov {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+    Ok(
+        match ins.name.to_lowercase().as_str().replace(".", "").as_str() {
+            "morethanonebyte" => Instructions::MoreThanOneByte,
+            "mov" => Instructions::Mov {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: ins.op2.as_ref().unwrap().clone(),
             },
-            op2: ins.op2.as_ref().unwrap().clone(),
-        },
-        "add" => Instructions::Add {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "add" => Instructions::Add {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
             },
-            op2: match ins.op2.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "sub" => Instructions::Sub {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
             },
-            op3: ins.op3.as_ref().unwrap().clone(),
-        },
-        "sub" => Instructions::Sub {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "mul" => Instructions::Mul {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
             },
-            op2: match ins.op2.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "and" => Instructions::And {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
             },
-            op3: ins.op3.as_ref().unwrap().clone(),
-        },
-        "mul" => Instructions::Mul {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "ldr" => Instructions::Ldr {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: ins.op2.as_ref().unwrap().clone(),
             },
-            op2: match ins.op2.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "str" => Instructions::Str {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandAddress(n) => n.clone(),
+                    _ => unreachable!(),
+                },
             },
-            op3: ins.op3.as_ref().unwrap().clone(),
-        },
-        "and" => Instructions::And {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "cmp" => Instructions::Cmp {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: ins.op2.as_ref().unwrap().clone(),
             },
-            op2: match ins.op2.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "b" => Instructions::B {
+                op1: ins.op1.as_ref().unwrap().clone(),
             },
-            op3: ins.op3.as_ref().unwrap().clone(),
-        },
-        "ldr" => Instructions::Ldr {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "beq" => Instructions::Beq {
+                op1: ins.op1.as_ref().unwrap().clone(),
             },
-            op2: ins.op2.as_ref().unwrap().clone(),
-        },
-        "str" => Instructions::Str {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "bne" => Instructions::Bne {
+                op1: ins.op1.as_ref().unwrap().clone(),
             },
-            op2: match ins.op2.as_ref().unwrap() {
-                Operand::OperandAddress(n) => n.clone(),
-                _ => unreachable!(),
+            "bgt" => Instructions::Bgt {
+                op1: ins.op1.as_ref().unwrap().clone(),
             },
-        },
-        "cmp" => Instructions::Cmp {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "blt" => Instructions::Blt {
+                op1: ins.op1.as_ref().unwrap().clone(),
             },
-            op2: ins.op2.as_ref().unwrap().clone(),
-        },
-        "b" => Instructions::B {
-            op1: ins.op1.as_ref().unwrap().clone(),
-        },
-        "beq" => Instructions::Beq {
-            op1: ins.op1.as_ref().unwrap().clone(),
-        },
-        "bne" => Instructions::Bne {
-            op1: ins.op1.as_ref().unwrap().clone(),
-        },
-        "bgt" => Instructions::Bgt {
-            op1: ins.op1.as_ref().unwrap().clone(),
-        },
-        "blt" => Instructions::Blt {
-            op1: ins.op1.as_ref().unwrap().clone(),
-        },
-        "bge" => Instructions::Bge {
-            op1: ins.op1.as_ref().unwrap().clone(),
-        },
-        "svc" => Instructions::Svc {
-            op1: ins.op1.as_ref().unwrap().clone(),
-        },
-        "adds" => Instructions::Adds {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "bge" => Instructions::Bge {
+                op1: ins.op1.as_ref().unwrap().clone(),
             },
-            op2: match ins.op2.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
+            "svc" => Instructions::Svc {
+                op1: ins.op1.as_ref().unwrap().clone(),
             },
-            op3: ins.op3.as_ref().unwrap().clone(),
+            "adds" => Instructions::Adds {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
+            },
+            "subs" => Instructions::Subs {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
+            },
+            _ => unreachable!(),
         },
-        "subs" => Instructions::Subs {
-            op1: match ins.op1.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
-            },
-            op2: match ins.op2.as_ref().unwrap() {
-                Operand::OperandRegister(n) => n.to_string(),
-                _ => unreachable!(),
-            },
-            op3: ins.op3.as_ref().unwrap().clone(),
-        },
-        _ => unreachable!(),
-    })
+    )
 }
 
 pub fn group_couple(s: &str) -> Vec<String> {
@@ -670,55 +674,69 @@ pub fn cmp(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
 pub fn b(registers: &mut Vec<Register>, op1: &Operand) {
     let new_place = op1.convert_reg_val(registers).unwrap();
 
-    set_register_value(registers, "PC", new_place - RegisterValue::Val64(1));
+    set_register_value(
+        registers,
+        "PC",
+        get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
+    );
 }
 
 pub fn beq(registers: &mut Vec<Register>, op1: &Operand) {
+    let new_place = op1.convert_reg_val(registers).unwrap();
+
     if get_flag(registers, "Z") {
         set_register_value(
             registers,
             "PC",
-            op1.convert_reg_val(registers).unwrap() - RegisterValue::Val64(1),
+            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
         );
     }
 }
 
 pub fn bne(registers: &mut Vec<Register>, op1: &Operand) {
+    let new_place = op1.convert_reg_val(registers).unwrap();
+
     if !get_flag(registers, "Z") {
         set_register_value(
             registers,
             "PC",
-            op1.convert_reg_val(registers).unwrap() - RegisterValue::Val64(1),
+            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
         );
     }
 }
 
 pub fn bgt(registers: &mut Vec<Register>, op1: &Operand) {
+    let new_place = op1.convert_reg_val(registers).unwrap();
+
     if !get_flag(registers, "Z") && get_flag(registers, "N") == get_flag(registers, "V") {
         set_register_value(
             registers,
             "PC",
-            op1.convert_reg_val(registers).unwrap() - RegisterValue::Val64(1),
+            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
         );
     }
 }
 
 pub fn blt(registers: &mut Vec<Register>, op1: &Operand) {
+    let new_place = op1.convert_reg_val(registers).unwrap();
+
     if get_flag(registers, "N") != get_flag(registers, "V") {
         set_register_value(
             registers,
             "PC",
-            op1.convert_reg_val(registers).unwrap() - RegisterValue::Val64(1),
+            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
         );
     }
 }
 
 pub fn bge(registers: &mut Vec<Register>, op1: &Operand) {
+    let new_place = op1.convert_reg_val(registers).unwrap();
+
     if get_flag(registers, "N") == get_flag(registers, "V") {
         set_register_value(
             registers,
             "PC",
-            op1.convert_reg_val(registers).unwrap() - RegisterValue::Val64(1),
+            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
         );
     }
 }

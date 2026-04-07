@@ -152,6 +152,7 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             ref op2,
             ref op3,
         } => subs(registers, op1, op2, op3),
+        Instructions::MoreThanOneByte => unreachable!(),
     }
 
     match ins_output {
@@ -177,26 +178,31 @@ pub fn execute_normal(
     debug_mode_on: bool,
 ) {
     let mut last_msg = String::new();
-    let mut ins;
+    let mut i = 0;
+    let mut pc;
+    let mut is_instruction;
 
     loop {
-        if debug_mode_on {
-            last_msg = debug_view_normal(
-                registers,
-                &code[(get_register_value(registers, "PC").unwrap().convert_64() as usize)..],
-                &last_msg,
-                &memory,
-                0,
-            );
-        }
-        ins = code
-            .get_mut(
-                (match get_register_value(registers, "PC") {
-                    Some(RegisterValue::Val64(n)) => n,
-                    _ => return,
-                }) as usize,
-            )
+        pc = get_register_value(registers, "PC").unwrap().convert_64();
+        is_instruction = !code
+            .get(pc as usize)
             .unwrap_or_else(|| {
+                fail(
+                    registers,
+                    "No instruction or system call to end the program.",
+                );
+                exit(1);
+            })
+            .name
+            .eq_ignore_ascii_case("morethanonebyte");
+        if i == 0 || is_instruction {
+            if debug_mode_on {
+                last_msg = debug_view_normal(registers, &code[(pc as usize)..], &last_msg, &memory);
+            }
+        }
+
+        if is_instruction {
+            let ins = code.get_mut(pc as usize).unwrap_or_else(|| {
                 fail(
                     registers,
                     "No instruction or system call to end the program.",
@@ -204,7 +210,8 @@ pub fn execute_normal(
                 exit(1);
             });
 
-        exec_ins(ins, registers, memory);
+            exec_ins(ins, registers, memory);
+        }
 
         set_register_value(
             registers,
@@ -216,6 +223,7 @@ pub fn execute_normal(
                 }) + 1,
             ),
         );
+        i = 1;
     }
 }
 
@@ -229,11 +237,12 @@ pub fn execute_disasm(
 ) {
     let mut last_msg = String::new();
     let mut ins;
-    let mut ins_reversed: Vec<u8>;
     let mut pc;
     let mut disassembled_ins;
     let mut disassembled;
     let mut disassembled_multi;
+    let disasm_point =
+        (get_register_value(registers, "PC").unwrap().convert_64() as usize - entry_point) as u64;
 
     loop {
         pc = get_register_value(registers, "PC").unwrap().convert_64() as usize - entry_point;
@@ -243,9 +252,8 @@ pub fn execute_disasm(
                 &file[pc..(pc + 12)],
                 &last_msg,
                 &memory,
-                entry_point,
                 cs,
-                pc as u64,
+                disasm_point,
             );
         }
 
@@ -256,7 +264,7 @@ pub fn execute_disasm(
         ins = &file[pc..(pc + 4)];
         // ins_reversed = ins.iter().rev().cloned().collect();
 
-        disassembled_multi = cs.disasm_all(&ins, pc as u64).unwrap_or_else(|_| {
+        disassembled_multi = cs.disasm_all(&ins, disasm_point).unwrap_or_else(|_| {
             fail_normal(&format!("Invalid bytes at {:#08X}", pc));
             exit(1);
         });
@@ -271,7 +279,7 @@ pub fn execute_disasm(
         }
 
         exec_ins(
-            &mut parse_instruction(&disassembled, registers, &Vec::new()).unwrap(),
+            &mut parse_instruction(&disassembled, registers, &Vec::new(), 0).unwrap(),
             registers,
             memory,
         );
