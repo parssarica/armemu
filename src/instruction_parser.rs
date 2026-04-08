@@ -364,7 +364,7 @@ pub fn parse_labels(file: &str) -> Vec<(&str, u64)> {
             continue;
         }
 
-        i += 1;
+        i += 4;
     }
 
     labels
@@ -655,7 +655,7 @@ pub fn parse_instruction(
                             Some(k) => Some(k),
                             None => match labels.iter().find(|&&x| x.0 == part) {
                                 Some(k) => Some(Operand::OperandNumber(RegisterValue::Val64(
-                                    ((k.1).wrapping_sub(ins_id)) as u64,
+                                    ((k.1).wrapping_sub(ins_id * 4)) as u64,
                                 ))),
                                 None => None,
                             },

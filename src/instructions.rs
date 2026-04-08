@@ -672,72 +672,66 @@ pub fn cmp(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
 }
 
 pub fn b(registers: &mut Vec<Register>, op1: &Operand) {
-    let new_place = op1.convert_reg_val(registers).unwrap();
+    let offset = op1.convert_reg_val(registers).unwrap().convert_64() as i64;
+    let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
 
-    set_register_value(
-        registers,
-        "PC",
-        get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
-    );
+    let new_pc = pc + offset - 4;
+
+    set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
 }
 
 pub fn beq(registers: &mut Vec<Register>, op1: &Operand) {
-    let new_place = op1.convert_reg_val(registers).unwrap();
-
     if get_flag(registers, "Z") {
-        set_register_value(
-            registers,
-            "PC",
-            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
-        );
+        let offset = op1.convert_reg_val(registers).unwrap().convert_64() as i64;
+        let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
+
+        let new_pc = pc + offset - 4;
+
+        set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
     }
 }
 
 pub fn bne(registers: &mut Vec<Register>, op1: &Operand) {
-    let new_place = op1.convert_reg_val(registers).unwrap();
-
     if !get_flag(registers, "Z") {
-        set_register_value(
-            registers,
-            "PC",
-            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
-        );
+        let offset = op1.convert_reg_val(registers).unwrap().convert_64() as i64;
+        let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
+
+        let new_pc = pc + offset - 4;
+
+        set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
     }
 }
 
 pub fn bgt(registers: &mut Vec<Register>, op1: &Operand) {
-    let new_place = op1.convert_reg_val(registers).unwrap();
-
     if !get_flag(registers, "Z") && get_flag(registers, "N") == get_flag(registers, "V") {
-        set_register_value(
-            registers,
-            "PC",
-            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
-        );
+        let offset = op1.convert_reg_val(registers).unwrap().convert_64() as i64;
+        let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
+
+        let new_pc = pc + offset - 4;
+
+        set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
     }
 }
 
 pub fn blt(registers: &mut Vec<Register>, op1: &Operand) {
-    let new_place = op1.convert_reg_val(registers).unwrap();
-
     if get_flag(registers, "N") != get_flag(registers, "V") {
-        set_register_value(
-            registers,
-            "PC",
-            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
-        );
+        let offset = op1.convert_reg_val(registers).unwrap().convert_64() as i64;
+        let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
+
+        let new_pc = pc + offset - 4;
+
+        set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
     }
 }
 
 pub fn bge(registers: &mut Vec<Register>, op1: &Operand) {
-    let new_place = op1.convert_reg_val(registers).unwrap();
-
     if get_flag(registers, "N") == get_flag(registers, "V") {
-        set_register_value(
-            registers,
-            "PC",
-            get_register_value(registers, "PC").unwrap() + new_place - RegisterValue::Val64(4),
-        );
+        let offset = op1.convert_reg_val(registers).unwrap().convert_64() as i64;
+        let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
+
+        let new_pc = pc + offset - 4;
+
+        set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
     }
 }
 

@@ -1,5 +1,5 @@
 [config]
-code = "asmfiles/assembly04.asm"
+binary = "binaries/branch"
 memory = "10MB"
 
 [debugview]
