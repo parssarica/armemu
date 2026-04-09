@@ -123,7 +123,7 @@ mod tests {
         let registers = create_registers();
         let line = "ADD X0, X1, X2, LSL #3";
 
-        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new(), 0).unwrap();
 
         assert_eq!(ins.name, "ADD", "Instruction 1 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 1 operand 1 not found.");
@@ -163,7 +163,7 @@ mod tests {
     fn parse_instruction_test2() {
         let registers = create_registers();
         let line = "SUBS X0, X1, X2, ASR #2";
-        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new(), 0).unwrap();
 
         assert_eq!(ins.name, "SUBS", "Instruction 2 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 2 operand 1 not found.");
@@ -203,7 +203,7 @@ mod tests {
     fn parse_instruction_test3() {
         let registers = create_registers();
         let line = "MOV X0, X1, X2, ASR #3";
-        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new(), 0).unwrap();
         assert_eq!(ins.name, "MOV", "Instruction 3 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 3 operand 1 not found.");
         assert!(ins.op2.is_some(), "Instruction 3 operand 2 not found.");
@@ -242,7 +242,7 @@ mod tests {
     fn parse_instruction_test4() {
         let registers = create_registers();
         let line = "ADD X0, X1, X2";
-        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new(), 0).unwrap();
 
         assert_eq!(ins.name, "ADD", "Instruction 4 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 4 operand 1 not found.");
@@ -259,7 +259,7 @@ mod tests {
     fn parse_instruction_test5() {
         let registers = create_registers();
         let line = "MOV X1, #10";
-        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new(), 0).unwrap();
 
         assert_eq!(ins.name, "MOV", "Instruction 5 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 5 operand 1 not found.");
@@ -276,7 +276,7 @@ mod tests {
     fn parse_instruction_test6() {
         let registers = create_registers();
         let line = "SUBS X1, X1, #1";
-        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new(), 0).unwrap();
 
         assert_eq!(ins.name, "SUBS", "Instruction 6 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 6 operand 1 not found.");
@@ -293,7 +293,7 @@ mod tests {
     fn parse_instruction_test7() {
         let registers = create_registers();
         let line = "BX X30";
-        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new()).unwrap();
+        let ins = parse_instruction(line, &registers, &Vec::<(&str, u64)>::new(), 0).unwrap();
 
         assert_eq!(ins.name, "BX", "Instruction 7 name didn't match.");
         assert!(ins.op1.is_some(), "Instruction 7 operand 1 not found.");
@@ -813,13 +813,7 @@ mod tests {
         let ins3 = Instruction {
             name: String::from("LDR"),
             op1: Some(Operand::OperandRegister(String::from("X0"))),
-            op2: Some(Operand::OperandAddress(MemoryAddress {
-                base_address: String::from(""),
-                second_val: Some(MemoryAddressVal::ValNumber(RegisterValue::Val64(271))),
-                barrelshifter: None,
-                postindexval: None,
-                addr_type: MemoryAddressType::SetRegister,
-            })),
+            op2: Some(Operand::OperandNumber(RegisterValue::Val64(267))),
             op3: None,
             op4: None,
             barrelshifter: None,
@@ -971,7 +965,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(9),
+            RegisterValue::Val64(6),
             "Branch #1 didn't work."
         );
         b(
@@ -980,16 +974,16 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(52),
             "Branch #2 didn't work."
         );
         b(
             &mut registers,
-            &Operand::OperandNumber(RegisterValue::Val64(1)),
+            &Operand::OperandNumber(RegisterValue::Val64(4)),
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(0),
+            RegisterValue::Val64(52),
             "Branch #3 didn't work."
         );
         b(
@@ -998,7 +992,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(19),
+            RegisterValue::Val64(68),
             "Branch #4 didn't work."
         );
     }
@@ -1024,7 +1018,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #2 didn't work."
         );
 
@@ -1035,7 +1029,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #3 didn't work."
         );
 
@@ -1046,7 +1040,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(19),
+            RegisterValue::Val64(62),
             "Branch #4 didn't work."
         );
     }
@@ -1073,7 +1067,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #2 didn't work."
         );
 
@@ -1084,7 +1078,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #3 didn't work."
         );
 
@@ -1095,7 +1089,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(19),
+            RegisterValue::Val64(62),
             "Branch #4 didn't work."
         );
     }
@@ -1122,7 +1116,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #2 didn't work."
         );
 
@@ -1133,7 +1127,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #3 didn't work."
         );
 
@@ -1144,7 +1138,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(19),
+            RegisterValue::Val64(62),
             "Branch #4 didn't work."
         );
     }
@@ -1171,7 +1165,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #2 didn't work."
         );
 
@@ -1182,7 +1176,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #3 didn't work."
         );
 
@@ -1193,7 +1187,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(19),
+            RegisterValue::Val64(62),
             "Branch #4 didn't work."
         );
     }
@@ -1220,7 +1214,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #2 didn't work."
         );
 
@@ -1231,7 +1225,7 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(49),
+            RegisterValue::Val64(46),
             "Branch #3 didn't work."
         );
 
@@ -1242,8 +1236,52 @@ mod tests {
         );
         assert_eq!(
             get_register_value(&registers, "PC").unwrap(),
-            RegisterValue::Val64(19),
+            RegisterValue::Val64(62),
             "Branch #4 didn't work."
+        );
+    }
+
+    #[test]
+    fn adr_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "PC", RegisterValue::Val64(12));
+        adr(
+            &mut registers,
+            "X0",
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+        set_register_value(&mut registers, "PC", RegisterValue::Val64(20));
+        adr(
+            &mut registers,
+            "X1",
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+        set_register_value(&mut registers, "PC", RegisterValue::Val64(28));
+        adr(
+            &mut registers,
+            "X2",
+            &Operand::OperandNumber(RegisterValue::Val64(20)),
+        );
+
+        let reg_val1 = get_register_value(&registers, "X0").unwrap();
+        let reg_val2 = get_register_value(&registers, "X1").unwrap();
+        let reg_val3 = get_register_value(&registers, "X2").unwrap();
+
+        assert_eq!(
+            reg_val1,
+            RegisterValue::Val64(32),
+            "ADR #1 calculated the answer wrongly."
+        );
+        assert_eq!(
+            reg_val2,
+            RegisterValue::Val64(40),
+            "ADR #2 calculated the answer wrongly."
+        );
+        assert_eq!(
+            reg_val3,
+            RegisterValue::Val64(48),
+            "ADR #3 calculated the answer wrongly."
         );
     }
 }

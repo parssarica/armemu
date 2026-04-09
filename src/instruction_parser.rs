@@ -686,7 +686,7 @@ pub fn parse_instruction(
             operand_count += 1;
         } else if trimmed_parts.len() == 2 {
             barrelshifter = Some(BarrelShifter {
-                barrelshiftertype: match trimmed_parts[0] {
+                barrelshiftertype: match trimmed_parts[0].to_uppercase().as_str() {
                     "LSL" => BarrelShifterType::LSL,
                     "LSR" => BarrelShifterType::LSR,
                     "ASR" => BarrelShifterType::ASR,

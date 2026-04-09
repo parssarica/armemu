@@ -152,6 +152,7 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             ref op2,
             ref op3,
         } => subs(registers, op1, op2, op3),
+        Instructions::Adr { ref op1, ref op2 } => adr(registers, op1, op2),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 

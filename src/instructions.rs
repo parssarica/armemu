@@ -83,6 +83,10 @@ pub enum Instructions {
         op2: String,
         op3: Operand,
     },
+    Adr {
+        op1: String,
+        op2: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -178,6 +182,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             Some(OperandType::Register),
             Some(OperandType::Register),
             Some(OperandType::RegImm),
+            None,
+            registers,
+        )?,
+        "adr" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Immediate),
+            None,
             None,
             registers,
         )?,
@@ -838,4 +850,12 @@ pub fn subs(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) 
     } else {
         set_flag(registers, "V", false);
     }
+}
+
+pub fn adr(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
+    set_register_value(
+        registers,
+        op1,
+        get_register_value(registers, "PC").unwrap() + op2.convert_reg_val(registers).unwrap(),
+    );
 }

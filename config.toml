@@ -1,5 +1,5 @@
 [config]
-binary = "binaries/branch"
+binary = "binaries/mostusedinss"
 memory = "10MB"
 
 [debugview]
