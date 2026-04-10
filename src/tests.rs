@@ -1390,4 +1390,30 @@ mod tests {
             "MOVK #5 didn't work."
         );
     }
+
+    #[test]
+    fn parse_num_test() {
+        let res1 = parse_num("10").expect("Parse num #1 failed for no reason.");
+        let res2 = parse_num("18446744073709551616");
+        let res3 = parse_num("-1").expect("Parse num #3 failed for no reason.");
+
+        assert_eq!(res1, 10, "Parse num #1 parsed wrong.");
+        assert!(matches!(res2, None), "Parse num #2 parsed wrong.");
+        assert_eq!(res3, 18446744073709551615, "Parse num #3 parsed wrong.");
+    }
+
+    #[test]
+    fn parse_num_hex_test() {
+        let res1 = parse_num_hex("0x10").expect("Parse num #1 failed for no reason.");
+        let res2 = parse_num_hex("18446744073709551616");
+        let res3 = parse_num_hex("-0x1").expect("Parse num #3 failed for no reason.");
+        let res4 = parse_num_hex("1").expect("Parse num #4 failed for no reason.");
+        let res5 = parse_num_hex("-10").expect("Parse num #5 failed for no reason.");
+
+        assert_eq!(res1, 0x10, "Parse num #1 parsed wrong.");
+        assert!(matches!(res2, None), "Parse num #2 parsed wrong.");
+        assert_eq!(res3, 0xffffffffffffffff, "Parse num #3 parsed wrong.");
+        assert_eq!(res4, 0x1, "Parse num #4 parsed wrong.");
+        assert_eq!(res5, 0xfffffffffffffff0, "Parse num #5 parsed wrong.");
+    }
 }

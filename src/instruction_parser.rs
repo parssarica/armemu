@@ -639,17 +639,14 @@ pub fn parse_instruction(
         } else if part.matches(' ').count() == 0 {
             operand = match get_register(registers, part) {
                 Some(n) => Some(Operand::OperandRegister(n.name.clone())),
-                None => match trimmed_parts[0]
-                    .trim_matches(|c: char| c == '#')
-                    .parse::<u64>()
-                {
-                    Ok(n) => Some(Operand::OperandNumber(RegisterValue::Val64(n))),
-                    Err(_) => match trimmed_parts[0]
+                None => match parse_num(trimmed_parts[0].trim_matches(|c: char| c == '#')) {
+                    Some(n) => Some(Operand::OperandNumber(RegisterValue::Val64(n))),
+                    None => match trimmed_parts[0]
                         .trim_matches(|c: char| c == '#')
                         .strip_prefix("0x")
                     {
                         Some(k) => Some(Operand::OperandNumber(RegisterValue::Val64(
-                            u64::from_str_radix(k, 16).ok()?,
+                            parse_num_hex(k)?,
                         ))),
                         None => match parse_memory_address(registers, part) {
                             Some(k) => Some(k),
@@ -767,4 +764,20 @@ pub fn get_bit(val: RegisterValue, bit: u8) -> bool {
         1 => true,
         _ => unreachable!(),
     }
+}
+
+pub fn parse_num(val: &str) -> Option<u64> {
+    if val.chars().nth(0)? == '-' {
+        return Some(val.parse::<i64>().ok()? as u64);
+    }
+
+    val.parse::<u64>().ok()
+}
+
+pub fn parse_num_hex(val: &str) -> Option<u64> {
+    if val.chars().nth(0)? == '-' {
+        return Some(i64::from_str_radix(&val.replace("0x", ""), 16).ok()? as u64);
+    }
+
+    u64::from_str_radix(val.strip_prefix("0x").unwrap_or(val), 16).ok()
 }

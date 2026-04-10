@@ -317,6 +317,13 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 },
                 op3: ins.op3.as_ref().unwrap().clone(),
             },
+            "adr" => Instructions::Adr {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: ins.op2.as_ref().unwrap().clone(),
+            },
             _ => unreachable!(),
         },
     )
