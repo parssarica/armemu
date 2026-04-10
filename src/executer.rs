@@ -160,6 +160,11 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
         } => subs(registers, op1, op2, op3),
         Instructions::Adr { ref op1, ref op2 } => adr(registers, op1, op2),
         Instructions::Adrp { ref op1, ref op2 } => adrp(registers, op1, op2),
+        Instructions::Orr {
+            ref op1,
+            ref op2,
+            ref op3,
+        } => orr(registers, op1, op2, op3),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 
