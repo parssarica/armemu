@@ -1461,4 +1461,23 @@ mod tests {
             13451811676621822934
         );
     }
+
+    #[test]
+    fn eor_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(314));
+        set_register_value(&mut registers, "X2", RegisterValue::Val64(271));
+        eor(
+            &mut registers,
+            "X0",
+            "X1",
+            &Operand::OperandRegister("X2".to_string()),
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            53
+        );
+    }
 }

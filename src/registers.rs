@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, BitAnd, BitOr, Mul, Shl, Shr, Sub};
+use std::ops::{Add, BitAnd, BitOr, BitXor, Mul, Shl, Shr, Sub};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum RegisterValue {
@@ -130,6 +130,24 @@ impl Shr for RegisterValue {
         };
 
         RegisterValue::Val64(val1 >> val2)
+    }
+}
+
+impl BitXor for RegisterValue {
+    type Output = RegisterValue;
+
+    fn bitxor(self, other: RegisterValue) -> RegisterValue {
+        let val1 = match self {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        let val2 = match other {
+            Self::Val32(n) => n as u64,
+            Self::Val64(n) => n,
+        };
+
+        RegisterValue::Val64(val1 ^ val2)
     }
 }
 
