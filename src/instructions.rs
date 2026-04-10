@@ -859,3 +859,94 @@ pub fn adr(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
         get_register_value(registers, "PC").unwrap() + op2.convert_reg_val(registers).unwrap(),
     );
 }
+
+pub fn movk(registers: &mut Vec<Register>, ins: &Instruction) {
+    match ins.op1 {
+        Some(Operand::OperandRegister(_)) => (),
+        _ => {
+            fail(registers, &format!("Invalid type in operand {}", 1));
+            exit(1);
+        }
+    }
+
+    match ins.op2 {
+        Some(Operand::OperandNumber(_)) => (),
+        _ => {
+            fail(registers, &format!("Invalid type in operand {}", 2));
+            exit(1);
+        }
+    }
+
+    let bit_start: u8 = match ins.barrelshifter.as_ref() {
+        Some(n) => {
+            match n.barrelshiftertype {
+                BarrelShifterType::LSL => (),
+                _ => {
+                    fail(registers, "Barrel shifting else LSL not allowed for MOVK.");
+                    exit(1);
+                }
+            }
+            n.value
+                .unwrap_or_else(|| {
+                    fail(
+                        registers,
+                        "Providing a value for the barrel shifter LSL is required.",
+                    );
+                    exit(1);
+                })
+                .convert_64()
+                .try_into()
+                .unwrap_or_else(|_| {
+                    fail(
+                        registers,
+                        "LSL can't take a value which isn't 8-bits for MOVK.",
+                    );
+                    exit(1);
+                })
+        }
+        None => 0,
+    };
+
+    let reg_name = ins.op1.as_ref().unwrap().get_reg_value().unwrap();
+    let value = match ins.op2 {
+        Some(Operand::OperandNumber(n)) => n,
+        _ => unreachable!(),
+    }
+    .convert_64();
+
+    if reg_name.chars().nth(0).unwrap() == 'W' {
+        let mask: u32 = 0xffff << bit_start;
+        set_register_value(
+            registers,
+            reg_name,
+            RegisterValue::Val32(
+                ((ins
+                    .op1
+                    .as_ref()
+                    .unwrap()
+                    .convert_reg_val(registers)
+                    .unwrap()
+                    .convert_32())
+                    & !mask)
+                    | (((value as u32) << bit_start) & mask),
+            ),
+        );
+    } else {
+        let mask: u64 = 0xffff << bit_start;
+        set_register_value(
+            registers,
+            reg_name,
+            RegisterValue::Val64(
+                ((ins
+                    .op1
+                    .as_ref()
+                    .unwrap()
+                    .convert_reg_val(registers)
+                    .unwrap()
+                    .convert_64())
+                    & !mask)
+                    | ((value << bit_start) & mask),
+            ),
+        );
+    }
+}

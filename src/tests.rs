@@ -1284,4 +1284,110 @@ mod tests {
             "ADR #3 calculated the answer wrongly."
         );
     }
+
+    #[test]
+    fn movk_test() {
+        let mut registers = create_registers();
+
+        movk(
+            &mut registers,
+            &Instruction {
+                name: "MOVK".to_string(),
+                op1: Some(Operand::OperandRegister("X0".to_string())),
+                op2: Some(Operand::OperandNumber(RegisterValue::Val64(1000))),
+                op3: None,
+                op4: None,
+                barrelshifter: Some(BarrelShifter {
+                    barrelshiftertype: BarrelShifterType::LSL,
+                    value: Some(RegisterValue::Val64(0)),
+                }),
+                operand_count: 2,
+            },
+        );
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            1000,
+            "MOVK #1 didn't work."
+        );
+        movk(
+            &mut registers,
+            &Instruction {
+                name: "MOVK".to_string(),
+                op1: Some(Operand::OperandRegister("X0".to_string())),
+                op2: Some(Operand::OperandNumber(RegisterValue::Val64(1000))),
+                op3: None,
+                op4: None,
+                barrelshifter: Some(BarrelShifter {
+                    barrelshiftertype: BarrelShifterType::LSL,
+                    value: Some(RegisterValue::Val64(16)),
+                }),
+                operand_count: 2,
+            },
+        );
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            65537000,
+            "MOVK #2 didn't work."
+        );
+        movk(
+            &mut registers,
+            &Instruction {
+                name: "MOVK".to_string(),
+                op1: Some(Operand::OperandRegister("X0".to_string())),
+                op2: Some(Operand::OperandNumber(RegisterValue::Val64(1000))),
+                op3: None,
+                op4: None,
+                barrelshifter: Some(BarrelShifter {
+                    barrelshiftertype: BarrelShifterType::LSL,
+                    value: Some(RegisterValue::Val64(32)),
+                }),
+                operand_count: 2,
+            },
+        );
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            4295032833000,
+            "MOVK #3 didn't work."
+        );
+        movk(
+            &mut registers,
+            &Instruction {
+                name: "MOVK".to_string(),
+                op1: Some(Operand::OperandRegister("X0".to_string())),
+                op2: Some(Operand::OperandNumber(RegisterValue::Val64(1000))),
+                op3: None,
+                op4: None,
+                barrelshifter: Some(BarrelShifter {
+                    barrelshiftertype: BarrelShifterType::LSL,
+                    value: Some(RegisterValue::Val64(48)),
+                }),
+                operand_count: 2,
+            },
+        );
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            281479271743489000,
+            "MOVK #4 didn't work."
+        );
+        movk(
+            &mut registers,
+            &Instruction {
+                name: "MOVK".to_string(),
+                op1: Some(Operand::OperandRegister("W1".to_string())),
+                op2: Some(Operand::OperandNumber(RegisterValue::Val64(1000))),
+                op3: None,
+                op4: None,
+                barrelshifter: Some(BarrelShifter {
+                    barrelshiftertype: BarrelShifterType::LSL,
+                    value: Some(RegisterValue::Val64(16)),
+                }),
+                operand_count: 2,
+            },
+        );
+        assert_eq!(
+            get_register_value(&registers, "W1").unwrap().convert_32(),
+            65536000,
+            "MOVK #5 didn't work."
+        );
+    }
 }

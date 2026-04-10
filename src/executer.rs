@@ -27,6 +27,7 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
     let mut old_val: Option<RegisterValue> = None;
     let mut register_barrel_shifter: Option<String> = None;
     let converted: Instructions;
+    let ins_org = ins.clone();
     let ins_output: Result<(), String> = Ok(());
 
     match &ins.barrelshifter {
@@ -90,6 +91,11 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
 
     if new_op.as_ref().is_some() {
         ins.op2 = new_op.clone();
+    }
+
+    if ins_org.name.to_lowercase() == "movk" {
+        movk(registers, &ins_org);
+        return;
     }
 
     converted = convert_ins(&ins, &registers).unwrap_or_else(|n| {
