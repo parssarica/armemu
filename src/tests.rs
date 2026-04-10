@@ -1416,4 +1416,22 @@ mod tests {
         assert_eq!(res4, 0x1, "Parse num #4 parsed wrong.");
         assert_eq!(res5, 0xfffffffffffffff0, "Parse num #5 parsed wrong.");
     }
+
+    #[test]
+    fn adrp_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "PC", RegisterValue::Val64(0x4000c0));
+        adrp(
+            &mut registers,
+            "X0",
+            &Operand::OperandNumber(RegisterValue::Val64(0)),
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            0x400000,
+            "ADRP worked wrongly."
+        );
+    }
 }

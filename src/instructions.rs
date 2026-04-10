@@ -87,6 +87,10 @@ pub enum Instructions {
         op1: String,
         op2: Operand,
     },
+    Adrp {
+        op1: String,
+        op2: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -189,6 +193,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             ins,
             Some(OperandType::Register),
             Some(OperandType::Immediate),
+            None,
+            None,
+            registers,
+        )?,
+        "adrp" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
             None,
             None,
             registers,
@@ -318,6 +330,13 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 op3: ins.op3.as_ref().unwrap().clone(),
             },
             "adr" => Instructions::Adr {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: ins.op2.as_ref().unwrap().clone(),
+            },
+            "adrp" => Instructions::Adrp {
                 op1: match ins.op1.as_ref().unwrap() {
                     Operand::OperandRegister(n) => n.to_string(),
                     _ => unreachable!(),
@@ -956,4 +975,15 @@ pub fn movk(registers: &mut Vec<Register>, ins: &Instruction) {
             ),
         );
     }
+}
+
+pub fn adrp(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
+    set_register_value(
+        registers,
+        op1,
+        RegisterValue::Val64(
+            (get_register_value(registers, "PC").unwrap().convert_64() & 0xfffffffffffff000)
+                + (op2.convert_reg_val(registers).unwrap().convert_64() << 12),
+        ),
+    );
 }
