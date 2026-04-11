@@ -1568,4 +1568,30 @@ mod tests {
             "LSR worked wrongly."
         );
     }
+
+    #[test]
+    fn asr_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(64));
+        set_register_value(&mut registers, "W3", RegisterValue::Val64(128));
+        asr(
+            &mut registers,
+            "X0",
+            "X1",
+            &Operand::OperandNumber(RegisterValue::Val32(1)),
+        );
+        asr(
+            &mut registers,
+            "W2",
+            "W3",
+            &Operand::OperandNumber(RegisterValue::Val32(3)),
+        );
+
+        let output1 = get_register_value(&registers, "X0").unwrap();
+        let output2 = get_register_value(&registers, "W2").unwrap();
+
+        assert_eq!(output1, RegisterValue::Val64(32), "ASR #1 worked wrongly.");
+        assert_eq!(output2, RegisterValue::Val32(16), "ASR #2 worked wrongly.");
+    }
 }
