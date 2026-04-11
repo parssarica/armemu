@@ -180,6 +180,11 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             ref op2,
             ref op3,
         } => bic(registers, op1, op2, op3),
+        Instructions::Lsl {
+            ref op1,
+            ref op2,
+            ref op3,
+        } => lsl(registers, op1, op2, op3),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 

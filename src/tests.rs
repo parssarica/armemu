@@ -1458,7 +1458,8 @@ mod tests {
 
         assert_eq!(
             get_register_value(&registers, "X0").unwrap().convert_64(),
-            13451811676621822934
+            13451811676621822934,
+            "ORR worked wrongly."
         );
     }
 
@@ -1477,7 +1478,8 @@ mod tests {
 
         assert_eq!(
             get_register_value(&registers, "X0").unwrap().convert_64(),
-            53
+            53,
+            "EOR worked wrongly."
         );
     }
 
@@ -1500,7 +1502,8 @@ mod tests {
 
         assert_eq!(
             get_register_value(&registers, "X0").unwrap().convert_64(),
-            53
+            53,
+            "EON worked wrongly."
         );
     }
 
@@ -1523,7 +1526,27 @@ mod tests {
 
         assert_eq!(
             get_register_value(&registers, "X0").unwrap().convert_64(),
-            8
+            8,
+            "BIC worked wrongly."
+        );
+    }
+
+    #[test]
+    fn lsl_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(16));
+        lsl(
+            &mut registers,
+            "X0",
+            "X1",
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            32,
+            "LSL worked wrongly."
         );
     }
 }
