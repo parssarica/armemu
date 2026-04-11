@@ -126,6 +126,11 @@ pub enum Instructions {
         op2: String,
         op3: Operand,
     },
+    Ror {
+        op1: String,
+        op2: String,
+        op3: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -289,6 +294,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             registers,
         )?,
         "asr" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::Immediate),
+            None,
+            registers,
+        )?,
+        "ror" => operand_check(
             ins,
             Some(OperandType::Register),
             Some(OperandType::Register),
@@ -501,6 +514,17 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 op3: ins.op3.as_ref().unwrap().clone(),
             },
             "asr" => Instructions::Asr {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
+            },
+            "ror" => Instructions::Ror {
                 op1: match ins.op1.as_ref().unwrap() {
                     Operand::OperandRegister(n) => n.to_string(),
                     _ => unreachable!(),
@@ -1217,5 +1241,21 @@ pub fn asr(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) {
             'W' => val,
             _ => RegisterValue::Val64(val.convert_64()),
         },
+    );
+}
+
+pub fn ror(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) {
+    let val = get_register_value(registers, op2).unwrap();
+    let n = op3.convert_reg_val(registers).unwrap();
+
+    set_register_value(
+        registers,
+        op1,
+        (val >> n)
+            | (val
+                << (RegisterValue::Val64(match op1.chars().nth(0).unwrap() {
+                    'W' => 32,
+                    _ => 64,
+                }) - n)),
     );
 }

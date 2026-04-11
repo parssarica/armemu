@@ -1594,4 +1594,23 @@ mod tests {
         assert_eq!(output1, RegisterValue::Val64(32), "ASR #1 worked wrongly.");
         assert_eq!(output2, RegisterValue::Val32(16), "ASR #2 worked wrongly.");
     }
+
+    #[test]
+    fn ror_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(628));
+        ror(
+            &mut registers,
+            "X0",
+            "X1",
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            314,
+            "ROR worked wrongly."
+        );
+    }
 }
