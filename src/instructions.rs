@@ -101,6 +101,11 @@ pub enum Instructions {
         op2: String,
         op3: Operand,
     },
+    Eon {
+        op1: String,
+        op2: String,
+        op3: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -224,6 +229,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             registers,
         )?,
         "eor" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
+            None,
+            registers,
+        )?,
+        "eon" => operand_check(
             ins,
             Some(OperandType::Register),
             Some(OperandType::Register),
@@ -381,6 +394,17 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 op3: ins.op3.as_ref().unwrap().clone(),
             },
             "eor" => Instructions::Eor {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
+            },
+            "eon" => Instructions::Eon {
                 op1: match ins.op1.as_ref().unwrap() {
                     Operand::OperandRegister(n) => n.to_string(),
                     _ => unreachable!(),
@@ -1049,5 +1073,13 @@ pub fn eor(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) {
         registers,
         op1,
         get_register_value(registers, op2).unwrap() ^ op3.convert_reg_val(registers).unwrap(),
+    );
+}
+
+pub fn eon(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) {
+    set_register_value(
+        registers,
+        op1,
+        get_register_value(registers, op2).unwrap() ^ (!op3.convert_reg_val(registers).unwrap()),
     );
 }

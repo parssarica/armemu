@@ -1480,4 +1480,27 @@ mod tests {
             53
         );
     }
+
+    #[test]
+    fn eon_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(314));
+        set_register_value(
+            &mut registers,
+            "X2",
+            RegisterValue::Val64(0xfffffffffffffef0),
+        );
+        eon(
+            &mut registers,
+            "X0",
+            "X1",
+            &Operand::OperandRegister("X2".to_string()),
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            53
+        );
+    }
 }
