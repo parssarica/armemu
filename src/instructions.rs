@@ -131,6 +131,12 @@ pub enum Instructions {
         op2: String,
         op3: Operand,
     },
+    Ubfx {
+        op1: String,
+        op2: String,
+        op3: Operand,
+        op4: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -307,6 +313,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             Some(OperandType::Register),
             Some(OperandType::Immediate),
             None,
+            registers,
+        )?,
+        "ubfx" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::Immediate),
+            Some(OperandType::Immediate),
             registers,
         )?,
         _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
@@ -534,6 +548,18 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                     _ => unreachable!(),
                 },
                 op3: ins.op3.as_ref().unwrap().clone(),
+            },
+            "ubfx" => Instructions::Ubfx {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: ins.op3.as_ref().unwrap().clone(),
+                op4: ins.op4.as_ref().unwrap().clone(),
             },
             _ => unreachable!(),
         },
@@ -1257,5 +1283,17 @@ pub fn ror(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand) {
                     'W' => 32,
                     _ => 64,
                 }) - n)),
+    );
+}
+
+pub fn ubfx(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &Operand, op4: &Operand) {
+    let op2_val = get_register_value(registers, op2).unwrap();
+    let bitstart = op3.convert_reg_val(registers).unwrap();
+    let bitlength = op4.convert_reg_val(registers).unwrap();
+
+    set_register_value(
+        registers,
+        op1,
+        (op2_val >> bitstart) & ((RegisterValue::Val64(1) << bitlength) - RegisterValue::Val64(1)),
     );
 }

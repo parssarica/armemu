@@ -1613,4 +1613,24 @@ mod tests {
             "ROR worked wrongly."
         );
     }
+
+    #[test]
+    fn ubfx_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(2882343476));
+        ubfx(
+            &mut registers,
+            "X0",
+            "X1",
+            &Operand::OperandNumber(RegisterValue::Val64(4)),
+            &Operand::OperandNumber(RegisterValue::Val64(12)),
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            291,
+            "ROR worked wrongly."
+        );
+    }
 }
