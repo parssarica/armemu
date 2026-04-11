@@ -1549,4 +1549,23 @@ mod tests {
             "LSL worked wrongly."
         );
     }
+
+    #[test]
+    fn lsr_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(64));
+        lsr(
+            &mut registers,
+            "X0",
+            "X1",
+            &Operand::OperandNumber(RegisterValue::Val64(1)),
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap().convert_64(),
+            32,
+            "LSR worked wrongly."
+        );
+    }
 }

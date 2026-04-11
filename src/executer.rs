@@ -185,6 +185,11 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             ref op2,
             ref op3,
         } => lsl(registers, op1, op2, op3),
+        Instructions::Lsr {
+            ref op1,
+            ref op2,
+            ref op3,
+        } => lsr(registers, op1, op2, op3),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 
