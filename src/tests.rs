@@ -1633,4 +1633,24 @@ mod tests {
             "ROR worked wrongly."
         );
     }
+
+    #[test]
+    fn sbfx_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "W1", RegisterValue::Val64(62976));
+        sbfx(
+            &mut registers,
+            "W0",
+            "W1",
+            &Operand::OperandNumber(RegisterValue::Val64(8)),
+            &Operand::OperandNumber(RegisterValue::Val64(8)),
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "W0").unwrap().convert_32(),
+            4294967286,
+            "ROR worked wrongly."
+        );
+    }
 }
