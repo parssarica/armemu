@@ -175,6 +175,11 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             ref op2,
             ref op3,
         } => eon(registers, op1, op2, op3),
+        Instructions::Bic {
+            ref op1,
+            ref op2,
+            ref op3,
+        } => bic(registers, op1, op2, op3),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 
