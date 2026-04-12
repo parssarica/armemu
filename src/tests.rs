@@ -1867,4 +1867,28 @@ mod tests {
             "LDRSW #1 ran wrongly."
         );
     }
+
+    #[test]
+    fn strb_test() {
+        let mut registers = create_registers();
+        let mut memory = vec![0; 16];
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(1));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(0));
+        let _ = strb(
+            &mut registers,
+            "X0",
+            MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &mut memory,
+        )
+        .expect("STRB failed for no reason.");
+
+        assert_eq!(memory[0], 1, "STRB didn't work correctly.");
+    }
 }
