@@ -1749,4 +1749,49 @@ mod tests {
         assert!(!get_flag(&registers, "C"), "NEGS #6 C flag is set.");
         assert!(get_flag(&registers, "V"), "NEGS #6 V flag isn't set.");
     }
+
+    #[test]
+    fn ldrb_test() {
+        let mut registers = create_registers();
+        let memory = vec![5, 0, 4, 2, 0, 2, 3, 3, 9, 0, 0, 0, 1, 0, 4, 1];
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(8));
+        ldrb(
+            &mut registers,
+            "X0",
+            MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &memory,
+        )
+        .expect("LDRB #1 failed for no reason.");
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(9999));
+        let output2 = ldrb(
+            &mut registers,
+            "X0",
+            MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &memory,
+        );
+
+        assert_eq!(
+            get_register_value(&registers, "X0").unwrap(),
+            RegisterValue::Val64(9),
+            "LDRB #1 worked wrongly."
+        );
+        assert_eq!(
+            output2,
+            Err(String::from("Invalid memory address")),
+            "LDRB #2 worked wrongly or threw wrong error."
+        );
+    }
 }

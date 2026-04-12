@@ -161,6 +161,10 @@ pub enum Instructions {
         op1: String,
         op2: String,
     },
+    Ldrb {
+        op1: String,
+        op2: MemoryAddress,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -383,6 +387,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             ins,
             Some(OperandType::Register),
             Some(OperandType::Register),
+            None,
+            None,
+            registers,
+        )?,
+        "ldrb" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::MemoryAddress),
             None,
             None,
             registers,
@@ -682,6 +694,16 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 },
                 op2: match ins.op2.as_ref().unwrap() {
                     Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+            },
+            "ldrb" => Instructions::Ldrb {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandAddress(n) => n.clone(),
                     _ => unreachable!(),
                 },
             },
@@ -1582,4 +1604,27 @@ pub fn negs(registers: &mut Vec<Register>, op1: &str, op2: &str) {
             set_flag(registers, "V", false);
         }
     }
+}
+
+pub fn ldrb(
+    registers: &mut Vec<Register>,
+    op1: &str,
+    op2: MemoryAddress,
+    memory: &Vec<u8>,
+) -> Result<(), String> {
+    let mem_addr_obj = {
+        op2.change_reg_preindex(registers);
+        op2
+    };
+
+    let addr = mem_addr_obj.get_addr(registers).convert_64();
+    let byte = memory
+        .get(addr as usize)
+        .ok_or_else(|| String::from("Invalid memory address"))?;
+
+    set_register_value(registers, op1, RegisterValue::Val64((*byte) as u64));
+
+    mem_addr_obj.change_reg_postindex(registers);
+
+    Ok(())
 }

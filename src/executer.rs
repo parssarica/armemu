@@ -224,6 +224,12 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
         } => sbc(registers, op1, op2, op3),
         Instructions::Neg { ref op1, ref op2 } => neg(registers, op1, op2),
         Instructions::Negs { ref op1, ref op2 } => negs(registers, op1, op2),
+        Instructions::Ldrb { ref op1, op2 } => {
+            ldrb(registers, op1, op2, memory).unwrap_or_else(|n| {
+                fail(registers, &n);
+                exit(1);
+            })
+        }
         Instructions::MoreThanOneByte => unreachable!(),
     }
 
