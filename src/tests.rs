@@ -1916,4 +1916,32 @@ mod tests {
         assert_eq!(memory[0], 183, "STRH didn't assign byte #1 correctly.");
         assert_eq!(memory[1], 122, "STRH didn't assign byte #2 correctly.");
     }
+
+    #[test]
+    fn ldp_test() {
+        let mut registers = create_registers();
+        let memory = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+
+        set_register_value(&mut registers, "X2", RegisterValue::Val64(0));
+        let _ = ldp(
+            &mut registers,
+            "X0",
+            "X1",
+            MemoryAddress {
+                base_address: String::from("X2"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &memory,
+        )
+        .expect("LDP failed for no reason");
+
+        let output1 = get_register_value(&registers, "X0").unwrap().convert_64();
+        let output2 = get_register_value(&registers, "X1").unwrap().convert_64();
+
+        assert_eq!(output1, 0x0807060504030201, "LDP didn't load X0 correctly.");
+        assert_eq!(output2, 0x100f0e0d0c0b0a09, "LDP didn't load X1 correctly.");
+    }
 }
