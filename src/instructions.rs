@@ -148,6 +148,11 @@ pub enum Instructions {
         op2: String,
         op3: String,
     },
+    Sbc {
+        op1: String,
+        op2: String,
+        op3: String,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -343,6 +348,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             registers,
         )?,
         "adc" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            None,
+            registers,
+        )?,
+        "sbc" => operand_check(
             ins,
             Some(OperandType::Register),
             Some(OperandType::Register),
@@ -601,6 +614,20 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 op4: ins.op4.as_ref().unwrap().clone(),
             },
             "adc" => Instructions::Adc {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: match ins.op3.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+            },
+            "sbc" => Instructions::Sbc {
                 op1: match ins.op1.as_ref().unwrap() {
                     Operand::OperandRegister(n) => n.to_string(),
                     _ => unreachable!(),
@@ -1397,6 +1424,35 @@ pub fn adc(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &str) {
                 }
             } else {
                 if op1.chars().nth(0).unwrap() == 'W' {
+                    RegisterValue::Val32(0)
+                } else {
+                    RegisterValue::Val64(0)
+                }
+            },
+    );
+}
+
+pub fn sbc(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &str) {
+    let is_32_bit = op1.chars().nth(0).unwrap() == 'W';
+
+    set_register_value(
+        registers,
+        op1,
+        get_register_value(registers, op2).unwrap()
+            - get_register_value(registers, op3).unwrap()
+            - if is_32_bit {
+                RegisterValue::Val32(1)
+            } else {
+                RegisterValue::Val64(1)
+            }
+            + if get_flag(registers, "C") {
+                if is_32_bit {
+                    RegisterValue::Val32(1)
+                } else {
+                    RegisterValue::Val64(1)
+                }
+            } else {
+                if is_32_bit {
                     RegisterValue::Val32(0)
                 } else {
                     RegisterValue::Val64(0)
