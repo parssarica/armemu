@@ -1689,7 +1689,7 @@ pub fn ldrh(
         .get(addr as usize)
         .ok_or_else(|| String::from("Invalid memory address"))?) as u64;
     let byte2 = *(memory
-        .get(addr as usize)
+        .get((addr as usize) + 1)
         .ok_or_else(|| String::from("Invalid memory address"))?) as u64;
 
     set_register_value(registers, op1, RegisterValue::Val64((byte2 << 8) | byte1));

@@ -1796,6 +1796,30 @@ mod tests {
     }
 
     #[test]
+    fn ldrh_test() {
+        let mut registers = create_registers();
+        let memory = vec![0x0a, 0x0b];
+
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(0));
+        let _ = ldrh(
+            &mut registers,
+            "X0",
+            MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &memory,
+        );
+
+        let output = get_register_value(&registers, "X0").unwrap().convert_64();
+
+        assert_eq!(output, 2826, "LDRH didn't work correctly.");
+    }
+
+    #[test]
     fn ldrsw_test() {
         let mut registers = create_registers();
         let memory = vec![0x00, 0x00, 0xff, 0xff, 0x00, 0x01];
