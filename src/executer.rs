@@ -222,6 +222,7 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             ref op2,
             ref op3,
         } => sbc(registers, op1, op2, op3),
+        Instructions::Neg { ref op1, ref op2 } => neg(registers, op1, op2),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 

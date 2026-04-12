@@ -1687,4 +1687,20 @@ mod tests {
         assert_eq!(output1, 29, "SBC #1 worked wrongly.");
         assert_eq!(output2, 30, "SBC #2 worked wrongly.");
     }
+
+    #[test]
+    fn neg_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X2", RegisterValue::Val64(255));
+        set_register_value(&mut registers, "W3", RegisterValue::Val32(255));
+        neg(&mut registers, "X0", "X2");
+        neg(&mut registers, "W1", "W3");
+
+        let output1 = get_register_value(&registers, "X0").unwrap().convert_64();
+        let output2 = get_register_value(&registers, "W1").unwrap().convert_32();
+
+        assert_eq!(output1, 0xffffffffffffff01, "NEG #1 worked wrongly.");
+        assert_eq!(output2, 0xffffff01, "NEG #2 worked wrongly.");
+    }
 }

@@ -153,6 +153,10 @@ pub enum Instructions {
         op2: String,
         op3: String,
     },
+    Neg {
+        op1: String,
+        op2: String,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -360,6 +364,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             Some(OperandType::Register),
             Some(OperandType::Register),
             Some(OperandType::Register),
+            None,
+            registers,
+        )?,
+        "neg" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            None,
             None,
             registers,
         )?,
@@ -637,6 +649,16 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                     _ => unreachable!(),
                 },
                 op3: match ins.op3.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+            },
+            "neg" => Instructions::Neg {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
                     Operand::OperandRegister(n) => n.to_string(),
                     _ => unreachable!(),
                 },
@@ -1459,4 +1481,23 @@ pub fn sbc(registers: &mut Vec<Register>, op1: &str, op2: &str, op3: &str) {
                 }
             },
     );
+}
+
+pub fn neg(registers: &mut Vec<Register>, op1: &str, op2: &str) {
+    if op2.chars().nth(0).unwrap() == 'W' {
+        set_register_value(
+            registers,
+            op1,
+            RegisterValue::Val32(4294967295) - get_register_value(registers, op2).unwrap()
+                + RegisterValue::Val32(1),
+        );
+    } else {
+        set_register_value(
+            registers,
+            op1,
+            RegisterValue::Val64(18446744073709551615)
+                - get_register_value(registers, op2).unwrap()
+                + RegisterValue::Val64(1),
+        )
+    }
 }
