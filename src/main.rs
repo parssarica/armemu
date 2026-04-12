@@ -10,7 +10,8 @@ mod tests;
 
 use capstone::prelude::*;
 use errormsg::*;
-use object::{Object, ObjectSegment};
+use object::read::elf::{ElfFile, ProgramHeader};
+use object::{elf, Endianness};
 use registers::*;
 use std::fs;
 use std::process::exit;
@@ -27,7 +28,8 @@ fn main() {
         }
     };
 
-    let mut memory: Vec<u8> = vec![0; parse_toml::parse_memory(&config.config.memory)];
+    let memory_size = parse_toml::parse_memory(&config.config.memory);
+    let mut memory: Vec<u8> = vec![0; memory_size];
     let mut registers = create_registers();
     let file_utf8;
 
@@ -67,15 +69,19 @@ fn main() {
                 exit(1);
             });
 
-            let f = object::File::parse(&*file_utf8).unwrap_or_else(|_| {
-                fail_normal("Binary file is invalid.");
-                exit(1);
-            });
+            let f =
+                ElfFile::<elf::FileHeader64<Endianness>>::parse(&*file_utf8).unwrap_or_else(|_| {
+                    fail_normal("Only ELF is supported.");
+                    exit(1);
+                });
+            let endian = f.endian();
 
             let base_address = f
-                .segments()
-                .map(|seg| seg.address())
-                .next()
+                .elf_program_headers()
+                .iter()
+                .filter(|ph| ph.p_type(endian) == elf::PT_LOAD)
+                .map(|ph| ph.p_vaddr(endian))
+                .min()
                 .unwrap_or_else(|| {
                     fail_normal("Binary file does not have a base address.");
                     exit(1);
@@ -87,21 +93,45 @@ fn main() {
                     .build()
                     .unwrap(),
             );
-            entry_point = f.entry();
+
+            entry_point = f.raw_header().e_entry.get(endian);
             file = (&file_utf8[((entry_point - base_address) as usize)..]).to_vec();
 
             set_register_value(&mut registers, "PC", RegisterValue::Val64(entry_point));
 
-            let mut i = 0;
-            for n in &file_utf8 {
-                *(memory.get_mut((base_address + i) as usize).unwrap_or_else(|| {
-                    fail_normal(
-                        &format!("Insufficient memory for loading the binary. Needing at least {} bytes.",
-                        (base_address as usize) + file_utf8.len()),
-                    );
-                    exit(1);
-                })) = *n;
-                i += 1;
+            for ph in f.elf_program_headers() {
+                let p_type = ph.p_type(endian);
+                match p_type {
+                    elf::PT_LOAD => {
+                        let virt_addr = ph.p_vaddr(endian);
+                        let offset = ph.p_offset(endian);
+                        let align = ph.p_align(endian);
+                        let filesz = ph.p_filesz(endian);
+                        let memsz = ph.p_memsz(endian);
+
+                        if virt_addr % align != offset % align {
+                            fail_normal("ELF binary is invalid.");
+                            exit(1);
+                        }
+
+                        let addr = virt_addr % align;
+                        if filesz + addr >= memory_size as u64 {
+                            fail_normal("Insufficient memory.");
+                            exit(1);
+                        }
+
+                        if memsz > filesz {
+                            for i in 0..memsz {
+                                memory[(virt_addr + i) as usize] = 0;
+                            }
+                        } else {
+                            for i in 0..filesz {
+                                memory[(virt_addr + i) as usize] = file_utf8[(addr + i) as usize];
+                            }
+                        }
+                    }
+                    _ => (),
+                }
             }
         }
     };
