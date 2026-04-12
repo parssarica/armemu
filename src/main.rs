@@ -94,7 +94,7 @@ fn main() {
                     .unwrap(),
             );
 
-            entry_point = f.raw_header().e_entry.get(endian);
+            entry_point = f.elf_header().e_entry.get(endian);
             file = (&file_utf8[((entry_point - base_address) as usize)..]).to_vec();
 
             set_register_value(&mut registers, "PC", RegisterValue::Val64(entry_point));

@@ -413,8 +413,8 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
         Some(n) => {
             if n.trim().starts_with("#") {
                 match registername.chars().nth(0).unwrap() {
-                    'W' => value = RegisterValue::Val32(n.trim()[1..].parse::<u32>().ok()?),
-                    _ => value = RegisterValue::Val64(n.trim()[1..].parse::<u64>().ok()?),
+                    'W' => value = RegisterValue::Val32(parse_32_bit(&n.trim()[1..])?),
+                    _ => value = RegisterValue::Val64(parse_64_bit(&n.trim()[1..])?),
                 }
                 if line.find("]")? != line.replace("!", "").len() - 1 {
                     postindexval = Some(value);
@@ -461,67 +461,67 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
         Some(n) => {
             if n.trim().starts_with("#") {
                 postindexval = match registername.chars().nth(0).unwrap() {
-                    'W' => Some(RegisterValue::Val32(n.trim()[1..].parse::<u32>().ok()?)),
-                    _ => Some(RegisterValue::Val64(n.trim()[1..].parse::<u64>().ok()?)),
+                    'W' => Some(RegisterValue::Val32(parse_32_bit(&n.trim()[1..])?)),
+                    _ => Some(RegisterValue::Val64(parse_64_bit(&n.trim()[1..])?)),
                 }
             } else if n.trim().starts_with("LSL") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::LSL,
                     value: match registername.chars().nth(0).unwrap() {
-                        'W' => Some(RegisterValue::Val32(
-                            n.replace("LSL", "").trim().parse::<u32>().ok()?,
-                        )),
-                        _ => Some(RegisterValue::Val64(
-                            n.replace("LSL", "").trim().parse::<u64>().ok()?,
-                        )),
+                        'W' => Some(RegisterValue::Val32(parse_32_bit(
+                            n.replace("LSL", "").trim(),
+                        )?)),
+                        _ => Some(RegisterValue::Val64(parse_64_bit(
+                            n.replace("LSL", "").trim(),
+                        )?)),
                     },
                 })
             } else if n.trim().starts_with("LSR") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::LSR,
                     value: match registername.chars().nth(0).unwrap() {
-                        'W' => Some(RegisterValue::Val32(
-                            n.replace("LSR", "").trim().parse::<u32>().ok()?,
-                        )),
-                        _ => Some(RegisterValue::Val64(
-                            n.replace("LSR", "").trim().parse::<u64>().ok()?,
-                        )),
+                        'W' => Some(RegisterValue::Val32(parse_32_bit(
+                            n.replace("LSR", "").trim(),
+                        )?)),
+                        _ => Some(RegisterValue::Val64(parse_64_bit(
+                            n.replace("LSR", "").trim(),
+                        )?)),
                     },
                 })
             } else if n.trim().starts_with("ASR") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::ASR,
                     value: match registername.chars().nth(0).unwrap() {
-                        'W' => Some(RegisterValue::Val32(
-                            n.replace("ASR", "").trim().parse::<u32>().ok()?,
-                        )),
-                        _ => Some(RegisterValue::Val64(
-                            n.replace("ASR", "").trim().parse::<u64>().ok()?,
-                        )),
+                        'W' => Some(RegisterValue::Val32(parse_32_bit(
+                            n.replace("ASR", "").trim(),
+                        )?)),
+                        _ => Some(RegisterValue::Val64(parse_64_bit(
+                            n.replace("ASR", "").trim(),
+                        )?)),
                     },
                 })
             } else if n.trim().starts_with("ROR") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::ROR,
                     value: match registername.chars().nth(0).unwrap() {
-                        'W' => Some(RegisterValue::Val32(
-                            n.replace("ROR", "").trim().parse::<u32>().ok()?,
-                        )),
-                        _ => Some(RegisterValue::Val64(
-                            n.replace("ROR", "").trim().parse::<u64>().ok()?,
-                        )),
+                        'W' => Some(RegisterValue::Val32(parse_32_bit(
+                            n.replace("ROR", "").trim(),
+                        )?)),
+                        _ => Some(RegisterValue::Val64(parse_64_bit(
+                            n.replace("ROR", "").trim(),
+                        )?)),
                     },
                 })
             } else if n.trim().starts_with("RRX") {
                 barrelshifter = Some(BarrelShifter {
                     barrelshiftertype: BarrelShifterType::RRX,
                     value: match registername.chars().nth(0).unwrap() {
-                        'W' => Some(RegisterValue::Val32(
-                            n.replace("RRX", "").trim().parse::<u32>().ok()?,
-                        )),
-                        _ => Some(RegisterValue::Val64(
-                            n.replace("RRX", "").trim().parse::<u64>().ok()?,
-                        )),
+                        'W' => Some(RegisterValue::Val32(parse_32_bit(
+                            n.replace("RRX", "").trim(),
+                        )?)),
+                        _ => Some(RegisterValue::Val64(parse_64_bit(
+                            n.replace("RRX", "").trim(),
+                        )?)),
                     },
                 })
             }
@@ -541,8 +541,8 @@ pub fn parse_memory_address(registers: &Vec<Register>, line: &str) -> Option<Ope
         Some(n) => {
             if n.trim().starts_with("#") {
                 postindexval = match registername.chars().nth(0).unwrap() {
-                    'W' => Some(RegisterValue::Val32(n.trim()[1..].parse::<u32>().ok()?)),
-                    _ => Some(RegisterValue::Val64(n.trim()[1..].parse::<u64>().ok()?)),
+                    'W' => Some(RegisterValue::Val32(parse_32_bit(&n.trim()[1..])?)),
+                    _ => Some(RegisterValue::Val64(parse_64_bit(&n.trim()[1..])?)),
                 }
             }
         }
@@ -780,4 +780,20 @@ pub fn parse_num_hex(val: &str) -> Option<u64> {
     }
 
     u64::from_str_radix(val.strip_prefix("0x").unwrap_or(val), 16).ok()
+}
+
+pub fn parse_32_bit(val: &str) -> Option<u32> {
+    if val.starts_with("0x") {
+        return parse_num_hex(val).map(|x| x as u32);
+    }
+
+    parse_num(val).map(|x| x as u32)
+}
+
+pub fn parse_64_bit(val: &str) -> Option<u64> {
+    if val.starts_with("0x") {
+        return parse_num_hex(val);
+    }
+
+    parse_num_hex(val)
 }
