@@ -1891,4 +1891,29 @@ mod tests {
 
         assert_eq!(memory[0], 1, "STRB didn't work correctly.");
     }
+
+    #[test]
+    fn strh_test() {
+        let mut registers = create_registers();
+        let mut memory = vec![0; 16];
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(31415));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(0));
+        let _ = strh(
+            &mut registers,
+            "X0",
+            MemoryAddress {
+                base_address: String::from("X1"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &mut memory,
+        )
+        .expect("STRH failed for no reason.");
+
+        assert_eq!(memory[0], 183, "STRH didn't assign byte #1 correctly.");
+        assert_eq!(memory[1], 122, "STRH didn't assign byte #2 correctly.");
+    }
 }
