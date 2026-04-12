@@ -1794,4 +1794,53 @@ mod tests {
             "LDRB #2 worked wrongly or threw wrong error."
         );
     }
+
+    #[test]
+    fn ldrsw_test() {
+        let mut registers = create_registers();
+        let memory = vec![0x00, 0x00, 0xff, 0xff, 0x00, 0x01];
+
+        set_register_value(&mut registers, "X2", RegisterValue::Val64(0));
+        set_register_value(&mut registers, "X3", RegisterValue::Val64(2));
+        let _ = ldrsw(
+            &mut registers,
+            "X0",
+            MemoryAddress {
+                base_address: String::from("X2"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &memory,
+        )
+        .expect("LDRSW #1 failed for no reason");
+        let _ = ldrsw(
+            &mut registers,
+            "X1",
+            MemoryAddress {
+                base_address: String::from("X3"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &memory,
+        )
+        .expect("LDRSW #2 failed for no reason");
+
+        let output1 = get_register_value(&registers, "X0").unwrap();
+        let output2 = get_register_value(&registers, "X1").unwrap();
+
+        assert_eq!(
+            output1,
+            RegisterValue::Val64(0xffffffffffff0000),
+            "LDRSW #1 ran wrongly."
+        );
+        assert_eq!(
+            output2,
+            RegisterValue::Val64(0x0100ffff),
+            "LDRSW #1 ran wrongly."
+        );
+    }
 }
