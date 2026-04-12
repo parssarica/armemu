@@ -1703,4 +1703,50 @@ mod tests {
         assert_eq!(output1, 0xffffffffffffff01, "NEG #1 worked wrongly.");
         assert_eq!(output2, 0xffffff01, "NEG #2 worked wrongly.");
     }
+
+    #[test]
+    fn negs_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X6", RegisterValue::Val64(0));
+        set_register_value(&mut registers, "W7", RegisterValue::Val32(0));
+        set_register_value(&mut registers, "X8", RegisterValue::Val64(1));
+        set_register_value(&mut registers, "W9", RegisterValue::Val32(1));
+        set_register_value(
+            &mut registers,
+            "X10",
+            RegisterValue::Val64(0x8000000000000000),
+        );
+        set_register_value(&mut registers, "W11", RegisterValue::Val32(0x80000000));
+        negs(&mut registers, "X0", "X6");
+        assert!(!get_flag(&registers, "N"), "NEGS #1 N flag is set.");
+        assert!(get_flag(&registers, "Z"), "NEGS #1 Z flag isn't set.");
+        assert!(get_flag(&registers, "C"), "NEGS #1 C flag isn't set.");
+        assert!(!get_flag(&registers, "V"), "NEGS #1 V flag is set.");
+        negs(&mut registers, "W1", "W7");
+        assert!(!get_flag(&registers, "N"), "NEGS #2 N flag is set.");
+        assert!(get_flag(&registers, "Z"), "NEGS #2 Z flag isn't set.");
+        assert!(get_flag(&registers, "C"), "NEGS #2 C flag isn't set.");
+        assert!(!get_flag(&registers, "V"), "NEGS #2 V flag is set.");
+        negs(&mut registers, "X2", "X8");
+        assert!(get_flag(&registers, "N"), "NEGS #3 N flag isn't set.");
+        assert!(!get_flag(&registers, "Z"), "NEGS #3 Z flag is set.");
+        assert!(!get_flag(&registers, "C"), "NEGS #3 C flag is set.");
+        assert!(!get_flag(&registers, "V"), "NEGS #3 V flag is set.");
+        negs(&mut registers, "W3", "W9");
+        assert!(get_flag(&registers, "N"), "NEGS #4 N flag isn't set.");
+        assert!(!get_flag(&registers, "Z"), "NEGS #4 Z flag is set.");
+        assert!(!get_flag(&registers, "C"), "NEGS #4 C flag is set.");
+        assert!(!get_flag(&registers, "V"), "NEGS #4 V flag is set.");
+        negs(&mut registers, "X4", "X10");
+        assert!(get_flag(&registers, "N"), "NEGS #5 N flag isn't set.");
+        assert!(!get_flag(&registers, "Z"), "NEGS #5 Z flag is set.");
+        assert!(!get_flag(&registers, "C"), "NEGS #5 C flag is set.");
+        assert!(get_flag(&registers, "V"), "NEGS #5 V flag isn't set.");
+        negs(&mut registers, "W5", "W11");
+        assert!(get_flag(&registers, "N"), "NEGS #6 N flag isn't set.");
+        assert!(!get_flag(&registers, "Z"), "NEGS #6 Z flag is set.");
+        assert!(!get_flag(&registers, "C"), "NEGS #6 C flag is set.");
+        assert!(get_flag(&registers, "V"), "NEGS #6 V flag isn't set.");
+    }
 }

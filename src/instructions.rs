@@ -157,6 +157,10 @@ pub enum Instructions {
         op1: String,
         op2: String,
     },
+    Negs {
+        op1: String,
+        op2: String,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -368,6 +372,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             registers,
         )?,
         "neg" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            None,
+            None,
+            registers,
+        )?,
+        "negs" => operand_check(
             ins,
             Some(OperandType::Register),
             Some(OperandType::Register),
@@ -654,6 +666,16 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 },
             },
             "neg" => Instructions::Neg {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+            },
+            "negs" => Instructions::Negs {
                 op1: match ins.op1.as_ref().unwrap() {
                     Operand::OperandRegister(n) => n.to_string(),
                     _ => unreachable!(),
@@ -1499,5 +1521,65 @@ pub fn neg(registers: &mut Vec<Register>, op1: &str, op2: &str) {
                 - get_register_value(registers, op2).unwrap()
                 + RegisterValue::Val64(1),
         )
+    }
+}
+
+pub fn negs(registers: &mut Vec<Register>, op1: &str, op2: &str) {
+    neg(registers, op1, op2);
+    let output = get_register_value(registers, op1).unwrap();
+    let is_32_bit = op1.chars().nth(0).unwrap() == 'W';
+
+    if is_32_bit {
+        let output32 = output.convert_32();
+        let input = get_register_value(registers, op2).unwrap().convert_32();
+        if output32 >= 2147483648 {
+            set_flag(registers, "N", true);
+        } else {
+            set_flag(registers, "N", false);
+        }
+
+        if output32 == 0 {
+            set_flag(registers, "Z", true);
+        } else {
+            set_flag(registers, "Z", false);
+        }
+
+        if input == 0 {
+            set_flag(registers, "C", true);
+        } else {
+            set_flag(registers, "C", false);
+        }
+
+        if input == 2147483648 {
+            set_flag(registers, "V", true);
+        } else {
+            set_flag(registers, "V", false);
+        }
+    } else {
+        let output64 = output.convert_64();
+        let input = get_register_value(registers, op2).unwrap().convert_64();
+        if output64 >= 9223372036854775808 {
+            set_flag(registers, "N", true);
+        } else {
+            set_flag(registers, "N", false);
+        }
+
+        if output64 == 0 {
+            set_flag(registers, "Z", true);
+        } else {
+            set_flag(registers, "Z", false);
+        }
+
+        if input == 0 {
+            set_flag(registers, "C", true);
+        } else {
+            set_flag(registers, "C", false);
+        }
+
+        if input == 9223372036854775808 {
+            set_flag(registers, "V", true);
+        } else {
+            set_flag(registers, "V", false);
+        }
     }
 }
