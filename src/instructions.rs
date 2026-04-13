@@ -210,6 +210,9 @@ pub enum Instructions {
         op2: Operand,
         op3: Operand,
     },
+    Bl {
+        op1: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -522,6 +525,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             Some(OperandType::Register),
             Some(OperandType::Immediate),
             Some(OperandType::RegImm),
+            None,
+            registers,
+        )?,
+        "bl" => operand_check(
+            ins,
+            Some(OperandType::Immediate),
+            None,
+            None,
             None,
             registers,
         )?,
@@ -931,6 +942,9 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 },
                 op2: ins.op2.as_ref().unwrap().clone(),
                 op3: ins.op3.as_ref().unwrap().clone(),
+            },
+            "bl" => Instructions::Bl {
+                op1: ins.op1.as_ref().unwrap().clone(),
             },
             _ => unreachable!(),
         },
@@ -2111,4 +2125,18 @@ pub fn tbnz(registers: &mut Vec<Register>, op1: &str, op2: &Operand, op3: &Opera
 
         set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
     }
+}
+
+pub fn bl(registers: &mut Vec<Register>, op1: &Operand) {
+    let offset = op1.convert_reg_val(registers).unwrap().convert_64() as i64;
+    let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
+
+    let new_pc = pc + offset - 4;
+
+    set_register_value(
+        registers,
+        "X30",
+        get_register_value(registers, "PC").unwrap() + RegisterValue::Val64(4),
+    );
+    set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
 }

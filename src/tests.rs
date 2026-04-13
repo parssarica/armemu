@@ -2089,4 +2089,23 @@ mod tests {
         assert_eq!(output1, 0, "TBNZ #1 branched.");
         assert_eq!(output2, 6, "TBNZ #2 didn't branch..");
     }
+
+    #[test]
+    fn bl_test() {
+        let mut registers = create_registers();
+
+        bl(
+            &mut registers,
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+
+        let output1 = get_register_value(&registers, "X30").unwrap().convert_64();
+        let output2 = get_register_value(&registers, "PC").unwrap().convert_64();
+
+        assert_eq!(
+            output1, 4,
+            "BL recorded next instruction's address wrongly."
+        );
+        assert_eq!(output2, 6, "BL branched to wrong instruction.");
+    }
 }
