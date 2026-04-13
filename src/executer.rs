@@ -262,6 +262,14 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             fail(registers, &n);
             exit(1);
         }),
+        Instructions::Stp {
+            ref op1,
+            ref op2,
+            op3,
+        } => stp(registers, op1, op2, op3, memory).unwrap_or_else(|n| {
+            fail(registers, &n);
+            exit(1);
+        }),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 

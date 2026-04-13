@@ -186,6 +186,11 @@ pub enum Instructions {
         op2: String,
         op3: MemoryAddress,
     },
+    Stp {
+        op1: String,
+        op2: String,
+        op3: MemoryAddress,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -449,6 +454,22 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             Some(OperandType::Register),
             Some(OperandType::MemoryAddress),
             None,
+            None,
+            registers,
+        )?,
+        "ldp" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::MemoryAddress),
+            None,
+            registers,
+        )?,
+        "stp" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Register),
+            Some(OperandType::MemoryAddress),
             None,
             registers,
         )?,
@@ -796,6 +817,34 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                     _ => unreachable!(),
                 },
                 op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandAddress(n) => n.clone(),
+                    _ => unreachable!(),
+                },
+            },
+            "ldp" => Instructions::Ldp {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: match ins.op3.as_ref().unwrap() {
+                    Operand::OperandAddress(n) => n.clone(),
+                    _ => unreachable!(),
+                },
+            },
+            "stp" => Instructions::Stp {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: match ins.op2.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op3: match ins.op3.as_ref().unwrap() {
                     Operand::OperandAddress(n) => n.clone(),
                     _ => unreachable!(),
                 },
@@ -1857,6 +1906,53 @@ pub fn ldp(
         let val2 = u64::from_le_bytes((&memory[addr + 8..addr + 16]).try_into().unwrap());
         set_register_value(registers, op1, RegisterValue::Val64(val1));
         set_register_value(registers, op2, RegisterValue::Val64(val2));
+    }
+
+    mem_addr_obj.change_reg_postindex(registers);
+
+    Ok(())
+}
+
+pub fn stp(
+    registers: &mut Vec<Register>,
+    op1: &str,
+    op2: &str,
+    op3: MemoryAddress,
+    memory: &mut Vec<u8>,
+) -> Result<(), String> {
+    let mem_addr_obj = {
+        op3.change_reg_preindex(registers);
+        op3
+    };
+
+    let addr = mem_addr_obj.get_addr(registers).convert_64() as usize;
+
+    if addr + 16 > memory.len() {
+        return Err(String::from("Invalid memory address."));
+    }
+
+    if op1.chars().nth(0).unwrap() == 'W' {
+        let val1 = get_register_value(registers, op1)
+            .unwrap()
+            .convert_32()
+            .to_le_bytes();
+        let val2 = get_register_value(registers, op2)
+            .unwrap()
+            .convert_32()
+            .to_le_bytes();
+        memory[addr..addr + 4].copy_from_slice(val1.as_slice());
+        memory[addr + 4..addr + 8].copy_from_slice(val2.as_slice());
+    } else {
+        let val1 = get_register_value(registers, op1)
+            .unwrap()
+            .convert_64()
+            .to_le_bytes();
+        let val2 = get_register_value(registers, op2)
+            .unwrap()
+            .convert_64()
+            .to_le_bytes();
+        memory[addr..addr + 8].copy_from_slice(val1.as_slice());
+        memory[addr + 8..addr + 16].copy_from_slice(val2.as_slice());
     }
 
     mem_addr_obj.change_reg_postindex(registers);

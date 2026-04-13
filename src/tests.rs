@@ -1944,4 +1944,40 @@ mod tests {
         assert_eq!(output1, 0x0807060504030201, "LDP didn't load X0 correctly.");
         assert_eq!(output2, 0x100f0e0d0c0b0a09, "LDP didn't load X1 correctly.");
     }
+
+    #[test]
+    fn stp_test() {
+        let mut registers = create_registers();
+        let mut memory = vec![0; 16];
+
+        set_register_value(
+            &mut registers,
+            "X0",
+            RegisterValue::Val64(0x0807060504030201),
+        );
+        set_register_value(
+            &mut registers,
+            "X1",
+            RegisterValue::Val64(0x100f0e0d0c0b0a09),
+        );
+        set_register_value(&mut registers, "X2", RegisterValue::Val64(0));
+        let _ = stp(
+            &mut registers,
+            "X0",
+            "X1",
+            MemoryAddress {
+                base_address: String::from("X2"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &mut memory,
+        )
+        .expect("STP failed for no reason");
+
+        for i in 1..17 {
+            assert_eq!(memory[i - 1], i as u8, "STP wrote byte #{} wrongly.", i);
+        }
+    }
 }
