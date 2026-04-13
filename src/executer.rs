@@ -284,6 +284,7 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             ref op3,
         } => tbnz(registers, op1, op2, op3),
         Instructions::Bl { ref op1 } => bl(registers, op1),
+        Instructions::Ret => ret(registers),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 

@@ -2108,4 +2108,16 @@ mod tests {
         );
         assert_eq!(output2, 6, "BL branched to wrong instruction.");
     }
+
+    #[test]
+    fn ret_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X30", RegisterValue::Val64(16));
+        ret(&mut registers);
+
+        let output = get_register_value(&registers, "PC").unwrap().convert_64();
+
+        assert_eq!(output, 12, "RET branched to wrong instruction.");
+    }
 }

@@ -213,6 +213,7 @@ pub enum Instructions {
     Bl {
         op1: Operand,
     },
+    Ret,
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -536,6 +537,7 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             None,
             registers,
         )?,
+        "ret" => operand_check(ins, None, None, None, None, registers)?,
         _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
     }
 
@@ -946,6 +948,7 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             "bl" => Instructions::Bl {
                 op1: ins.op1.as_ref().unwrap().clone(),
             },
+            "ret" => Instructions::Ret,
             _ => unreachable!(),
         },
     )
@@ -2139,4 +2142,12 @@ pub fn bl(registers: &mut Vec<Register>, op1: &Operand) {
         get_register_value(registers, "PC").unwrap() + RegisterValue::Val64(4),
     );
     set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
+}
+
+pub fn ret(registers: &mut Vec<Register>) {
+    set_register_value(
+        registers,
+        "PC",
+        get_register_value(registers, "X30").unwrap() - RegisterValue::Val64(4),
+    );
 }
