@@ -1980,4 +1980,27 @@ mod tests {
             assert_eq!(memory[i - 1], i as u8, "STP wrote byte #{} wrongly.", i);
         }
     }
+
+    #[test]
+    fn cbz_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(0));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(1));
+        cbz(
+            &mut registers,
+            "X0",
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        let output1 = get_register_value(&registers, "PC").unwrap().convert_64();
+        cbz(
+            &mut registers,
+            "X1",
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        let output2 = get_register_value(&registers, "PC").unwrap().convert_64();
+
+        assert_eq!(output1, 6, "CBZ #1 didn't branch.");
+        assert_eq!(output2, 6, "CBZ #1 branched.");
+    }
 }
