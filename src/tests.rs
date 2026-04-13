@@ -2060,4 +2060,33 @@ mod tests {
         assert_eq!(output1, 6, "TBZ #1 didn't branch.");
         assert_eq!(output2, 6, "TBZ #2 branched.");
     }
+
+    #[test]
+    fn tbnz_test() {
+        let mut registers = create_registers();
+
+        set_register_value(
+            &mut registers,
+            "X0",
+            RegisterValue::Val64(0x8000000000000000),
+        );
+        tbnz(
+            &mut registers,
+            "X0",
+            &Operand::OperandNumber(RegisterValue::Val64(63)),
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        let output1 = get_register_value(&registers, "PC").unwrap().convert_64();
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(0));
+        tbnz(
+            &mut registers,
+            "X0",
+            &Operand::OperandNumber(RegisterValue::Val64(63)),
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        let output2 = get_register_value(&registers, "PC").unwrap().convert_64();
+
+        assert_eq!(output1, 0, "TBNZ #1 branched.");
+        assert_eq!(output2, 6, "TBNZ #2 didn't branch..");
+    }
 }
