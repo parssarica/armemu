@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-BSD-green)
 ![Status](https://img.shields.io/badge/status-active-success)
 
-An ARM64 CPU emulator written in Rust.
+An experimental ARM64 CPU emulator written in Rust.
 
 ## Table of Contents
 
