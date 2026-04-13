@@ -1,6 +1,6 @@
 [config]
-binary = "binaries/mostusedinss"
+code = "asmfiles/assembly05.asm"
 memory = "10MB"
 
 [debugview]
-debugmode = true
+debugmode = false
