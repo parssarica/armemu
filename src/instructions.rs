@@ -199,6 +199,7 @@ pub enum Instructions {
         op1: String,
         op2: Operand,
     },
+    Nop,
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -497,6 +498,7 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             None,
             registers,
         )?,
+        "nop" => operand_check(ins, None, None, None, None, registers)?,
         _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
     }
 
@@ -887,6 +889,7 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 },
                 op2: ins.op2.as_ref().unwrap().clone(),
             },
+            "nop" => Instructions::Nop,
             _ => unreachable!(),
         },
     )
