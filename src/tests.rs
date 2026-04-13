@@ -617,7 +617,7 @@ mod tests {
         let line4 = "LDR X0, [X1, #12, LSL #23]";
         let line5 = "LDR X0, [X1, LSL #24], #12";
         let line6 = "";
-        let line7 = "RaNdOmDaTa";
+        let line7 = "NOP";
 
         let output1 = magic_split(line1);
         let output2 = magic_split(line2);
@@ -633,7 +633,7 @@ mod tests {
         assert!(output4.is_some(), "Split #4 failed.");
         assert!(output5.is_some(), "Split #5 failed.");
         assert!(output6.is_none(), "Split #6 didn't fail.");
-        assert!(output7.is_none(), "Split #7 didn't fail.");
+        assert!(output7.is_some(), "Split #7 failed.");
 
         assert_eq!(
             output1.unwrap(),
@@ -667,6 +667,11 @@ mod tests {
                 "[X1, LSL #24], #12".to_string()
             ],
             "Split #5 worked wrong."
+        );
+        assert_eq!(
+            output7.unwrap(),
+            vec!["NOP".to_string(),],
+            "Split #7 worked wrong."
         );
     }
 
@@ -2002,5 +2007,28 @@ mod tests {
 
         assert_eq!(output1, 6, "CBZ #1 didn't branch.");
         assert_eq!(output2, 6, "CBZ #1 branched.");
+    }
+
+    #[test]
+    fn cbnz_test() {
+        let mut registers = create_registers();
+
+        set_register_value(&mut registers, "X0", RegisterValue::Val64(0));
+        set_register_value(&mut registers, "X1", RegisterValue::Val64(1));
+        cbnz(
+            &mut registers,
+            "X0",
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        let output1 = get_register_value(&registers, "PC").unwrap().convert_64();
+        cbnz(
+            &mut registers,
+            "X1",
+            &Operand::OperandNumber(RegisterValue::Val64(10)),
+        );
+        let output2 = get_register_value(&registers, "PC").unwrap().convert_64();
+
+        assert_eq!(output1, 0, "CBNZ #1 branched.");
+        assert_eq!(output2, 6, "CBNZ #1 didn't branch.");
     }
 }

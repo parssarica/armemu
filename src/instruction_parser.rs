@@ -568,7 +568,11 @@ pub fn magic_split(line: &str) -> Option<Vec<String>> {
         parts.push(beginning.to_string());
         rest_parts = rest.split(',').collect();
     } else {
-        return None;
+        if line.len() == 0 {
+            return None;
+        } else {
+            return Some(vec![line.to_string()]);
+        }
     }
 
     for part in rest_parts {
@@ -624,7 +628,7 @@ pub fn parse_instruction(
     let mut operand_count = 0;
     let instruction_name: Option<String>;
 
-    parts = magic_split(line)?;
+    parts = magic_split(line.trim())?;
 
     instruction_name = Some(parts[0].clone());
 

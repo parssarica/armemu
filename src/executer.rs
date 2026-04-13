@@ -271,6 +271,7 @@ pub fn exec_ins(ins: &mut Instruction, registers: &mut Vec<Register>, mut memory
             exit(1);
         }),
         Instructions::Cbz { ref op1, ref op2 } => cbz(registers, op1, op2),
+        Instructions::Cbnz { ref op1, ref op2 } => cbnz(registers, op1, op2),
         Instructions::MoreThanOneByte => unreachable!(),
     }
 

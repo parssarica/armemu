@@ -195,6 +195,10 @@ pub enum Instructions {
         op1: String,
         op2: Operand,
     },
+    Cbnz {
+        op1: String,
+        op2: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -478,6 +482,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             registers,
         )?,
         "cbz" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::RegImm),
+            None,
+            None,
+            registers,
+        )?,
+        "cbnz" => operand_check(
             ins,
             Some(OperandType::Register),
             Some(OperandType::RegImm),
@@ -862,6 +874,13 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 },
             },
             "cbz" => Instructions::Cbz {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: ins.op2.as_ref().unwrap().clone(),
+            },
+            "cbnz" => Instructions::Cbnz {
                 op1: match ins.op1.as_ref().unwrap() {
                     Operand::OperandRegister(n) => n.to_string(),
                     _ => unreachable!(),
@@ -1981,6 +2000,17 @@ pub fn stp(
 
 pub fn cbz(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
     if get_register_value(registers, op1).unwrap().convert_64() == 0 {
+        let offset = op2.convert_reg_val(registers).unwrap().convert_64() as i64;
+        let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
+
+        let new_pc = pc + offset - 4;
+
+        set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
+    }
+}
+
+pub fn cbnz(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
+    if get_register_value(registers, op1).unwrap().convert_64() != 0 {
         let offset = op2.convert_reg_val(registers).unwrap().convert_64() as i64;
         let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
 
