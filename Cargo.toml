@@ -2,6 +2,10 @@
 name = "armemu"
 version = "1.1.1"
 edition = "2024"
+description = "An experimental Arm64 emulator."
+license = "BSD"
+repository = "https://github.com/parssarica/armemu"
+readme = "README.md"
 
 [dependencies]
 capstone = "0.14.0"
