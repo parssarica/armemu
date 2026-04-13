@@ -200,6 +200,11 @@ pub enum Instructions {
         op2: Operand,
     },
     Nop,
+    Tbz {
+        op1: String,
+        op2: Operand,
+        op3: Operand,
+    },
 }
 
 pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instructions, String> {
@@ -499,6 +504,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
             registers,
         )?,
         "nop" => operand_check(ins, None, None, None, None, registers)?,
+        "tbz" => operand_check(
+            ins,
+            Some(OperandType::Register),
+            Some(OperandType::Immediate),
+            Some(OperandType::RegImm),
+            None,
+            registers,
+        )?,
         _ => return Err(format!("Unknown instruction: {}", ins.name.as_str())),
     }
 
@@ -890,6 +903,14 @@ pub fn convert_ins(ins: &Instruction, registers: &Vec<Register>) -> Result<Instr
                 op2: ins.op2.as_ref().unwrap().clone(),
             },
             "nop" => Instructions::Nop,
+            "tbz" => Instructions::Tbz {
+                op1: match ins.op1.as_ref().unwrap() {
+                    Operand::OperandRegister(n) => n.to_string(),
+                    _ => unreachable!(),
+                },
+                op2: ins.op2.as_ref().unwrap().clone(),
+                op3: ins.op3.as_ref().unwrap().clone(),
+            },
             _ => unreachable!(),
         },
     )
@@ -2015,6 +2036,30 @@ pub fn cbz(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
 pub fn cbnz(registers: &mut Vec<Register>, op1: &str, op2: &Operand) {
     if get_register_value(registers, op1).unwrap().convert_64() != 0 {
         let offset = op2.convert_reg_val(registers).unwrap().convert_64() as i64;
+        let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
+
+        let new_pc = pc + offset - 4;
+
+        set_register_value(registers, "PC", RegisterValue::Val64(new_pc as u64));
+    }
+}
+
+pub fn tbz(registers: &mut Vec<Register>, op1: &str, op2: &Operand, op3: &Operand) {
+    let is_branching = match op1.chars().nth(0).unwrap() {
+        'W' => {
+            ((get_register_value(registers, op1).unwrap().convert_32()
+                >> op2.convert_reg_val(registers).unwrap().convert_32())
+                & 1) as u64
+        }
+        _ => {
+            (get_register_value(registers, op1).unwrap().convert_64()
+                >> op2.convert_reg_val(registers).unwrap().convert_64())
+                & 1
+        }
+    };
+
+    if is_branching == 1 {
+        let offset = op3.convert_reg_val(registers).unwrap().convert_64() as i64;
         let pc = get_register_value(registers, "PC").unwrap().convert_64() as i64;
 
         let new_pc = pc + offset - 4;
