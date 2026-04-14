@@ -9,6 +9,7 @@ An experimental ARM64 CPU emulator written in Rust.
 
 ## Table of Contents
 
+* [Quick Start](#quick-start)
 * [Installation](#installation)
 
   * [Install via Cargo (recommended)](#install-via-cargo-recommended)
