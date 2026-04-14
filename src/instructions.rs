@@ -1193,11 +1193,23 @@ pub fn ldr(
             n
         }
         Operand::OperandNumber(n) => {
-            set_register_value(
-                registers,
-                op1,
-                get_register_value(registers, "PC").unwrap() + RegisterValue::Val64(4) + *n,
-            );
+            let addr = (get_register_value(registers, "PC").unwrap() + *n).convert_64() as usize;
+            match op1.chars().nth(0).unwrap() {
+                'W' => set_register_value(
+                    registers,
+                    op1,
+                    RegisterValue::Val32(u32::from_le_bytes(
+                        (&memory[addr..addr + 4])[..4].try_into().unwrap(),
+                    )),
+                ),
+                _ => set_register_value(
+                    registers,
+                    op1,
+                    RegisterValue::Val64(u64::from_le_bytes(
+                        (&memory[addr..addr + 8])[..8].try_into().unwrap(),
+                    )),
+                ),
+            }
             return Ok(());
         }
         _ => unreachable!(),

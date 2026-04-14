@@ -818,7 +818,7 @@ mod tests {
         let ins3 = Instruction {
             name: String::from("LDR"),
             op1: Some(Operand::OperandRegister(String::from("X0"))),
-            op2: Some(Operand::OperandNumber(RegisterValue::Val64(267))),
+            op2: Some(Operand::OperandNumber(RegisterValue::Val64(768))),
             op3: None,
             op4: None,
             barrelshifter: None,
@@ -873,6 +873,20 @@ mod tests {
         );
 
         let converted = convert_ins(&ins3, &registers).expect("Conversion failed for no reason.");
+        set_register_value(&mut registers, "X3", RegisterValue::Val64(271));
+        set_register_value(&mut registers, "X4", RegisterValue::Val64(768));
+        let _ = str(
+            &mut registers,
+            "X3",
+            MemoryAddress {
+                base_address: String::from("X4"),
+                second_val: None,
+                barrelshifter: None,
+                postindexval: None,
+                addr_type: MemoryAddressType::Normal,
+            },
+            &mut memory,
+        );
         match converted {
             Instructions::Ldr { ref op1, ref op2 } => {
                 ldr(&mut registers, op1, op2, &memory).expect("Instruction failed for no reason.")

@@ -19,6 +19,51 @@ An experimental ARM64 CPU emulator written in Rust.
   * [Available Commands](#available-commands)
 * [License](#license)
 
+## Quick Start
+
+Save this file as `hello.s`:
+```asm
+.data
+msg:
+    .byte 72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33, 10
+
+.text
+.global _start
+
+_start:
+    MOV X0, #1
+    LDR X1, =msg
+    MOV X2, #14
+    MOV X8, #64
+    SVC #0
+    MOV X8, #93
+    MOV X0, #0
+    SVC #0
+```
+
+Assemble it:
+```bash
+# If you are in x86
+aarch64-linux-gnu-as -o hello.o hello.s
+aarch64-linux-gnu-ld -o hello hello.o
+
+# If you are in ARM
+as -o hello.o hello.s
+ld -o hello hello.o
+```
+
+Save this as `config.toml`:
+```toml
+[config]
+binary = "hello"
+memory = "10MB"
+
+[debugview]
+debugmode = false
+```
+
+And run `armemu`!
+
 ## Installation
 
 ### Install via Cargo (recommended)
